@@ -1,91 +1,208 @@
-import React, { useState } from 'react';
-import { Save, X, Calculator } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Save, X, Calculator, Search, Upload } from 'lucide-react';
 import { useTransactions } from '../contexts/TransactionContext';
 import { Transaction } from '../types/Transaction';
+import { useTranslation } from 'react-i18next';
+import { useMarkets, MarketMember } from '../contexts/MarketContext';
 
-const TransactionForm: React.FC = () => {
+import { MOCK_USERS } from '../utils/mockUsers';
+
+import {
+  loadActivities,
+  saveActivities,
+  ymd,
+} from '../utils/Activities';
+
+type Props = {
+  defaultType?: Transaction['type'] | null;
+  onAfterSubmit?: () => void;
+};
+
+const TransactionForm: React.FC<Props> = ({ defaultType, onAfterSubmit }) => {
+  const { t } = useTranslation();
   const { addTransaction } = useTransactions();
-  
+  const { markets, listMembers } = useMarkets();
+
+  // --- mainform ---
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     type: 'expense' as Transaction['type'],
-    description: '',
     amount: '',
     category: '',
     paymentMethod: 'card' as Transaction['paymentMethod'],
-    partyInvolved: '',
     notes: '',
+    marketId: '' as string,
+    collectorId: '' as string, // collector
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const categories = {
-    income: ['Salary', 'Freelance', 'Investment', 'Gift', 'Other Income'],
-    expense: ['Food', 'Transportation', 'Utilities', 'Entertainment', 'Healthcare', 'Shopping', 'Other Expense'],
-    transfer: ['Savings', 'Investment Account', 'Credit Card Payment', 'Other Transfer'],
+  // --- search ---
+  const [marketQuery, setMarketQuery] = useState('');
+  const [marketOpen, setMarketOpen] = useState(false);
+
+  const filteredMarkets = useMemo(() => {
+    const q = marketQuery.trim().toLowerCase();
+    if (!q) return markets;
+    return markets.filter((m) => m.name.toLowerCase().includes(q) || m.id.toLowerCase().includes(q));
+  }, [marketQuery, markets]);
+
+  const pickMarket = (id: string) => {
+    const m = markets.find((x) => x.id === id);
+    if (!m) return;
+    setFormData((s) => ({ ...s, marketId: m.id }));
+    setMarketQuery(`${m.name} (ID: ${m.id})`);
+    setMarketOpen(false);
   };
 
+  // --- listname members + checkbox “no pay” ---
+  const membersOfMarket: MarketMember[] = useMemo(
+    () => (formData.marketId ? listMembers(formData.marketId) : []),
+    [formData.marketId, listMembers]
+  );
+  const [nonPayers, setNonPayers] = useState<Set<string>>(new Set());
+
+  const toggleNonPayer = (memberId: string) => {
+    setNonPayers((prev) => {
+      const next = new Set(prev);
+      if (next.has(memberId)) next.delete(memberId);
+      else next.add(memberId);
+      return next;
+    });
+  };
+
+  // --- upload slip  ---
+  const [slipFile, setSlipFile] = useState<File | null>(null);
+  const [slipPreviewUrl, setSlipPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!slipFile) {
+      if (slipPreviewUrl) URL.revokeObjectURL(slipPreviewUrl);
+      setSlipPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(slipFile);
+    setSlipPreviewUrl(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [slipFile]);
+
+  // setting default type 
+  useEffect(() => {
+    if (!defaultType) return;
+    setFormData((prev) => ({ ...prev, type: defaultType }));
+  }, [defaultType]);
+
+  // --- category options ---
+  const CATEGORY_OPTIONS = [
+    { value: '', label: t('selectCategory') || 'ເລືອກຫມວດໝູ່' },
+    { value: 'capital', label: 'ທຶນ' },
+    { value: 'installment_interest', label: 'ງວດ-ດອກເບີຍ' },
+    { value: 'penalty', label: 'ຄ່າປັບ' },
+  ];
+
+  // check validation
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
-    }
-
-    if (!formData.amount || parseFloat(formData.amount) <= 0) {
-      newErrors.amount = 'Amount must be greater than 0';
-    }
-
-    if (!formData.category) {
-      newErrors.category = 'Category is required';
-    }
+    if (!formData.marketId) newErrors.market = t('validation.marketIsRequired') || 'ກະລຸນາເລືອກຕະຫຼາດ';
+    if (!formData.collectorId) newErrors.collector = 'ກະລຸນາເລືອກຜູ້ເກັບເງິນ';
+    if (!formData.amount || parseFloat(formData.amount) <= 0)
+      newErrors.amount = t('validation.amountMustBeGreaterThan0');
+    if (!formData.category) newErrors.category = t('validation.categoryIsRequired');
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  const categoryLabel = (val: string) => {
+    const f = CATEGORY_OPTIONS.find((x) => x.value === val);
+    return f?.label || val;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
-    const transactionData = {
-      ...formData,
+    const tx: Transaction = {
+      ...(undefined as unknown as Transaction), 
+      date: formData.date,
+      type: formData.type,
+      description: '', 
       amount: parseFloat(formData.amount),
-      partyInvolved: formData.partyInvolved || undefined,
+      category: formData.category, 
+      paymentMethod: formData.paymentMethod,
       notes: formData.notes || undefined,
+      marketId: formData.marketId || undefined,
     };
+    addTransaction(tx);
 
-    addTransaction(transactionData);
+    const list = loadActivities();
+    const ts = Date.now();
+    const id = `TX-${ts}`;
+    const market = markets.find((m) => m.id === formData.marketId);
+    const collector = MOCK_USERS.find((u) => u.id === formData.collectorId);
+    const nonPayerNames = membersOfMarket
+      .filter((m) => nonPayers.has(m.id))
+      .map((m) => `${m.firstName ?? ''} ${m.lastName ?? ''}`.trim())
+      .filter(Boolean);
 
-    // Reset form
+    const noteParts: string[] = [];
+    if (nonPayerNames.length) noteParts.push(`ບໍ່ໄດ້ຈ່າຍໃນມື້ນີ້: ${nonPayerNames.join(', ')}`);
+    if (formData.notes?.trim()) noteParts.push(`ໝາຍເຫດ: ${formData.notes.trim()}`);
+
+    list.unshift({
+      id,
+      date: formData.date || ymd(),
+      type: formData.type,
+      amount: parseFloat(formData.amount),
+      category: categoryLabel(formData.category),
+      marketId: formData.marketId,
+      marketName: market?.name,
+      paymentMethod: formData.paymentMethod,
+      userId: collector?.id || '',
+      userName: collector ? `${collector.firstName} ${collector.lastName}` : 'Unknown',
+      note: noteParts.join(' | ') || undefined,
+      slipUrl: slipPreviewUrl || undefined,
+    });
+    saveActivities(list);
+
+    // reset
     setFormData({
       date: new Date().toISOString().split('T')[0],
       type: 'expense',
-      description: '',
       amount: '',
       category: '',
       paymentMethod: 'card',
-      partyInvolved: '',
       notes: '',
+      marketId: '',
+      collectorId: '',
     });
-
+    setMarketQuery('');
+    setMarketOpen(false);
+    setNonPayers(new Set());
+    setSlipFile(null);
     setErrors({});
+
+    onAfterSubmit?.();
   };
 
   const resetForm = () => {
     setFormData({
       date: new Date().toISOString().split('T')[0],
       type: 'expense',
-      description: '',
       amount: '',
       category: '',
       paymentMethod: 'card',
-      partyInvolved: '',
       notes: '',
+      marketId: '',
+      collectorId: '',
     });
+    setMarketQuery('');
+    setMarketOpen(false);
+    setNonPayers(new Set());
+    setSlipFile(null);
     setErrors({});
   };
 
@@ -98,8 +215,8 @@ const TransactionForm: React.FC = () => {
               <Calculator className="h-6 w-6 text-blue-600" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Add New Transaction</h2>
-              <p className="text-gray-600">Enter your transaction details below</p>
+              <h2 className="text-2xl font-bold text-gray-900">{t('addNewTransaction')}</h2>
+              <p className="text-gray-600">{t('enterYourTransactionDetailsBelow')}</p>
             </div>
           </div>
         </div>
@@ -109,7 +226,7 @@ const TransactionForm: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">
-                Date
+                {t('date')}
               </label>
               <input
                 type="date"
@@ -122,57 +239,123 @@ const TransactionForm: React.FC = () => {
 
             <div>
               <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-2">
-                Transaction Type
+                {t('transactionType')}
               </label>
               <select
                 id="type"
                 value={formData.type}
-                onChange={(e) => {
-                  const newType = e.target.value as Transaction['type'];
-                  setFormData({ 
-                    ...formData, 
-                    type: newType, 
-                    category: '' // Reset category when type changes
-                  });
-                }}
+                onChange={(e) => setFormData({ ...formData, type: e.target.value as Transaction['type'] })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="income">Income</option>
-                <option value="expense">Expense</option>
-                <option value="transfer">Transfer</option>
+                <option value="income">{t('income')}</option>
+                <option value="expense">{t('expenses')}</option>
+                <option value="transfer">{t('transfer')}</option>
               </select>
             </div>
           </div>
 
-          {/* Description */}
-          <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-              Description *
+          {/* Market Autocomplete */}
+          <div className="relative">
+            <label htmlFor="market" className="block text-sm font-medium text-gray-700 mb-2">
+              {t('markets.title') /* "ຕະຫຼາດ" */}
             </label>
-            <input
-              type="text"
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="e.g., Coffee at Starbucks, Salary payment"
-              className={`w-full px-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                errors.description ? 'border-red-500' : 'border-gray-300'
-              }`}
-            />
-            {errors.description && (
-              <p className="mt-1 text-sm text-red-600">{errors.description}</p>
+            <div className="relative">
+              <Search className="h-4 w-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                id="market"
+                type="text"
+                value={marketQuery}
+                onChange={(e) => {
+                  setMarketQuery(e.target.value);
+                  setMarketOpen(true);
+                  setFormData((s) => ({ ...s, marketId: '' }));
+                  setNonPayers(new Set());
+                }}
+                onFocus={() => setMarketOpen(true)}
+                placeholder={t('markets.searchByIdOrName') || 'Search market by ID or name'}
+                className={`w-full pl-9 pr-3 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  errors.market ? 'border-red-500' : 'border-gray-300'
+                }`}
+              />
+            </div>
+            {errors.market && <p className="mt-1 text-sm text-red-600">{errors.market}</p>}
+
+            {marketOpen && (
+              <div
+                className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow"
+                onMouseLeave={() => setMarketOpen(false)}
+              >
+                {filteredMarkets.length === 0 ? (
+                  <div className="px-3 py-2 text-sm text-gray-500">{t('noResults') || 'No results'}</div>
+                ) : (
+                  filteredMarkets.slice(0, 8).map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      className="w-full text-left px-3 py-2 hover:bg-gray-50"
+                      onClick={() => pickMarket(m.id)}
+                    >
+                      <div className="font-medium">{m.name}</div>
+                      <div className="text-xs text-gray-500">
+                        ID: {m.id} • {m.village}, {m.city}, {m.district}
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
             )}
           </div>
 
-          {/* Amount and Category */}
+          {/* Members checklist */}
+          {formData.marketId && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                ບໍ່ໄດ້ຈ່າຍໃນມື້ນີ້ (ຕິກທີ່ບັອກ “ບໍ່ໄດ້ຈ່າຍ”)
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {membersOfMarket.length === 0 ? (
+                  <div className="text-gray-500">ຕະຫຼາດນີ້ຍັງບໍ່ມີສະມາຊິກ</div>
+                ) : (
+                  membersOfMarket.map((m) => {
+                    const fullName = `${m.firstName ?? ''} ${m.lastName ?? ''}`.trim() || '(ບໍ່ລະບຸຊື່)';
+                    const checked = nonPayers.has(m.id);
+                    return (
+                      <label
+                        key={m.id}
+                        className={`flex items-center gap-2 p-2 border rounded-lg cursor-pointer ${
+                          checked ? 'bg-red-50 border-red-200' : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4"
+                          checked={checked}
+                          onChange={() => toggleNonPayer(m.id)}
+                        />
+                        <span className="text-sm">
+                          {fullName}
+                          {m.role === 'agent' ? <span className="ml-2 text-xs text-blue-600">(ແມ່ຄ່າຍ)</span> : null}
+                        </span>
+                      </label>
+                    );
+                  })
+                )}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                * ເຫດຜົນໃຫ້ຂຽນທີ່ “ບົດບັນທຶກ” ດ້ານລຸ່ມ
+              </p>
+            </div>
+          )}
+
+          {/* Amount & Category */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-2">
-                Amount *
+                {t('amountMt')}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">$</span>
+                  <span className="text-gray-500 sm:text-sm">₭</span>
                 </div>
                 <input
                   type="number"
@@ -187,14 +370,12 @@ const TransactionForm: React.FC = () => {
                   }`}
                 />
               </div>
-              {errors.amount && (
-                <p className="mt-1 text-sm text-red-600">{errors.amount}</p>
-              )}
+              {errors.amount && <p className="mt-1 text-sm text-red-600">{errors.amount}</p>}
             </div>
 
             <div>
               <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
-                Category *
+                {t('categoryMt')}
               </label>
               <select
                 id="category"
@@ -204,66 +385,101 @@ const TransactionForm: React.FC = () => {
                   errors.category ? 'border-red-500' : 'border-gray-300'
                 }`}
               >
-                <option value="">Select category</option>
-                {categories[formData.type].map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
+                {CATEGORY_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
                 ))}
               </select>
-              {errors.category && (
-                <p className="mt-1 text-sm text-red-600">{errors.category}</p>
-              )}
+              {errors.category && <p className="mt-1 text-sm text-red-600">{errors.category}</p>}
             </div>
           </div>
 
-          {/* Payment Method and Party */}
+          {/* Payment Method & Collector */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="paymentMethod" className="block text-sm font-medium text-gray-700 mb-2">
-                Payment Method
+                {t('paymentMethod')}
               </label>
               <select
                 id="paymentMethod"
                 value={formData.paymentMethod}
-                onChange={(e) => setFormData({ 
-                  ...formData, 
-                  paymentMethod: e.target.value as Transaction['paymentMethod']
-                })}
+                onChange={(e) =>
+                  setFormData({ ...formData, paymentMethod: e.target.value as Transaction['paymentMethod'] })
+                }
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="cash">Cash</option>
-                <option value="card">Card</option>
-                <option value="bank_transfer">Bank Transfer</option>
-                <option value="check">Check</option>
-                <option value="other">Other</option>
+                <option value="cash">{t('paymentMethodList.cash')}</option>
+                <option value="card">{t('paymentMethodList.card')}</option>
+                <option value="bank_transfer">{t('paymentMethodList.bankTransfer')}</option>
+                <option value="check">{t('paymentMethodList.check')}</option>
+                <option value="other">{t('paymentMethodList.other')}</option>
               </select>
+
+              {/* upload slip */}
+              {formData.paymentMethod === 'bank_transfer' && (
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">slip</label>
+                  <div className="flex items-center gap-3">
+                    <label className="inline-flex items-center px-3 py-2 border rounded-lg cursor-pointer hover:bg-gray-50">
+                      <Upload className="h-4 w-4 mr-2" />
+                      <span>upload</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => setSlipFile(e.target.files?.[0] || null)}
+                      />
+                    </label>
+                    {slipPreviewUrl && (
+                      <a
+                        href={slipPreviewUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-blue-600 text-sm underline"
+                      >
+                        see the picture
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>
-              <label htmlFor="partyInvolved" className="block text-sm font-medium text-gray-700 mb-2">
-                Party Involved
+              <label htmlFor="collector" className="block text-sm font-medium text-gray-700 mb-2">
+                ຜູ້ເກັບເງິນ
               </label>
-              <input
-                type="text"
-                id="partyInvolved"
-                value={formData.partyInvolved}
-                onChange={(e) => setFormData({ ...formData, partyInvolved: e.target.value })}
-                placeholder="e.g., John Smith, Amazon, Restaurant"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
+              <select
+                id="collector"
+                value={formData.collectorId}
+                onChange={(e) => setFormData({ ...formData, collectorId: e.target.value })}
+                className={`w-full px-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  errors.collector ? 'border-red-500' : 'border-gray-300'
+                }`}
+              >
+                <option value="">— ລະບຸຜູ້ເກັບເງິນ —</option>
+                {MOCK_USERS.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.firstName} {u.lastName} ({u.role})
+                  </option>
+                ))}
+              </select>
+              {errors.collector && <p className="mt-1 text-sm text-red-600">{errors.collector}</p>}
             </div>
           </div>
 
           {/* Notes */}
           <div>
             <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-              Notes
+              {t('notes')}
             </label>
             <textarea
               id="notes"
               rows={3}
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              placeholder="Additional details about this transaction..."
+              placeholder="ຂຽນເຫດຜົນຂອງຜູ້ທີ່ບໍ່ໄດ້ຈ່າຍມື້ນີ້ ຫຼື ລາຍລະອຽດເພີ່ມເຕີມ"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
@@ -276,14 +492,14 @@ const TransactionForm: React.FC = () => {
               className="flex items-center px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors duration-200"
             >
               <X className="h-4 w-4 mr-2" />
-              Clear
+              {t('clear')}
             </button>
             <button
               type="submit"
               className="flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
             >
               <Save className="h-4 w-4 mr-2" />
-              Add Transaction
+              {t('addTransaction')}
             </button>
           </div>
         </form>

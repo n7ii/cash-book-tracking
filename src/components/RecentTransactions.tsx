@@ -1,12 +1,14 @@
 import React from 'react';
 import { Clock, ArrowRight } from 'lucide-react';
 import { Transaction } from '../types/Transaction';
+import { useTranslation } from 'react-i18next';
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
 }
 
 const RecentTransactions: React.FC<RecentTransactionsProps> = ({ transactions }) => {
+  const { t } = useTranslation();
   const getTypeColor = (type: Transaction['type']) => {
     switch (type) {
       case 'income': return 'text-green-600 bg-green-50';
@@ -17,9 +19,9 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ transactions })
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('lo-LA', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'LAK',
     }).format(amount);
   };
 
@@ -28,17 +30,17 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ transactions })
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-2">
           <Clock className="h-5 w-5 text-gray-400" />
-          <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{t("recentActivity")}</h3>
         </div>
         <button className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center space-x-1">
-          <span>View all</span>
+          <span>{t("viewAll")}</span>
           <ArrowRight className="h-4 w-4" />
         </button>
       </div>
 
       <div className="space-y-4">
         {transactions.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">No recent transactions</p>
+          <p className="text-gray-500 text-center py-8">{t("noRecentTransactions")}</p>
         ) : (
           transactions.map((transaction) => (
             <div key={transaction.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors duration-150">
