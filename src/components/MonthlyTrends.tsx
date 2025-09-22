@@ -1,12 +1,14 @@
 import React, { useMemo } from 'react';
 import { Calendar, TrendingUp } from 'lucide-react';
 import { Transaction } from '../types/Transaction';
+import { useTranslation } from 'react-i18next';
 
 interface MonthlyTrendsProps {
   transactions: Transaction[];
 }
 
 const MonthlyTrends: React.FC<MonthlyTrendsProps> = ({ transactions }) => {
+  const { t } = useTranslation();
   const monthlyData = useMemo(() => {
     const now = new Date();
     const months = [];
@@ -29,7 +31,7 @@ const MonthlyTrends: React.FC<MonthlyTrendsProps> = ({ transactions }) => {
 
       months.push({
         month,
-        monthName: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        monthName: date.toLocaleDateString('en-US', { month: 'numeric', year: 'numeric' }),
         income,
         expenses,
         net: income - expenses,
@@ -48,7 +50,7 @@ const MonthlyTrends: React.FC<MonthlyTrendsProps> = ({ transactions }) => {
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div className="flex items-center space-x-2 mb-6">
         <Calendar className="h-5 w-5 text-gray-400" />
-        <h3 className="text-lg font-semibold text-gray-900">Monthly Trends</h3>
+        <h3 className="text-lg font-semibold text-gray-900">{t("monthlyTrends")}</h3>
       </div>
 
       <div className="space-y-6">
@@ -63,9 +65,9 @@ const MonthlyTrends: React.FC<MonthlyTrendsProps> = ({ transactions }) => {
                 <div className="flex items-center space-x-4">
                   <span className="text-xs text-gray-500">{month.transactionCount} txns</span>
                   <span className={`text-sm font-medium ${month.net >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {new Intl.NumberFormat('en-US', { 
+                    {new Intl.NumberFormat('lo-LA', { 
                       style: 'currency', 
-                      currency: 'USD',
+                      currency: 'LAK',
                       signDisplay: 'always'
                     }).format(month.net)}
                   </span>
@@ -78,7 +80,7 @@ const MonthlyTrends: React.FC<MonthlyTrendsProps> = ({ transactions }) => {
                   <div
                     className="h-full bg-green-500 rounded transition-all duration-500"
                     style={{ width: `${incomeHeight}%` }}
-                    title={`Income: ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(month.income)}`}
+                    title={`Income: ${new Intl.NumberFormat('lo-LA', { style: 'currency', currency: 'LAK' }).format(month.income)}`}
                   ></div>
                 </div>
                 
@@ -87,14 +89,14 @@ const MonthlyTrends: React.FC<MonthlyTrendsProps> = ({ transactions }) => {
                   <div
                     className="h-full bg-red-500 rounded transition-all duration-500"
                     style={{ width: `${expenseHeight}%` }}
-                    title={`Expenses: ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(month.expenses)}`}
+                    title={`Expenses: ${new Intl.NumberFormat('lo-LA', { style: 'currency', currency: 'LAK' }).format(month.expenses)}`}
                   ></div>
                 </div>
               </div>
 
               <div className="flex justify-between text-xs text-gray-500">
-                <span>Income: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(month.income)}</span>
-                <span>Expenses: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(month.expenses)}</span>
+                <span>{t("income")}: {new Intl.NumberFormat('lo-LA', { style: 'currency', currency: 'LAK' }).format(month.income)}</span>
+                <span>{t("expenses")}: {new Intl.NumberFormat('lo-LA', { style: 'currency', currency: 'LAK' }).format(month.expenses)}</span>
               </div>
             </div>
           );

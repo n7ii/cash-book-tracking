@@ -12,8 +12,15 @@ import { useTransactions } from '../contexts/TransactionContext';
 import SummaryCard from './SummaryCard';
 import RecentTransactions from './RecentTransactions';
 import BalanceChart from './BalanceChart';
+import { useTranslation } from 'react-i18next';
 
-const Dashboard: React.FC = () => {
+type TxType = 'income' | 'expense' | 'transfer';
+
+  type Props = {
+  onQuickAdd?: (type: TxType) => void; 
+  };
+
+const Dashboard: React.FC<Props> = ({ onQuickAdd }) => {
   const { getTransactionSummary, transactions } = useTransactions();
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d'>('30d');
 
@@ -26,6 +33,7 @@ const Dashboard: React.FC = () => {
       end: end.toISOString().split('T')[0]
     };
   };
+  const { t } = useTranslation();
 
   const currentRange = getDateRange(dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : 90);
   const summary = getTransactionSummary(currentRange);
@@ -36,8 +44,8 @@ const Dashboard: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Financial Dashboard</h1>
-          <p className="text-gray-600">Track your income, expenses, and overall financial health</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t("financialDashboard")}</h1>
+          <p className="text-gray-600">{t("trackYourIncomeExpenseAndOverallFinancialHealth")}</p>
         </div>
         
         <div className="flex items-center space-x-2">
@@ -47,9 +55,9 @@ const Dashboard: React.FC = () => {
             onChange={(e) => setDateRange(e.target.value as '7d' | '30d' | '90d')}
             className="px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-            <option value="90d">Last 90 days</option>
+            <option value="7d">{t("last7Days")}</option>
+            <option value="30d">{t("last30Days")}</option>
+            <option value="90d">{t("last90Days")}</option>
           </select>
         </div>
       </div>
@@ -57,14 +65,14 @@ const Dashboard: React.FC = () => {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <SummaryCard
-          title="Net Balance"
+          title={t("netBalance")}
           value={summary.netBalance}
           icon={DollarSign}
           color="blue"
           format="currency"
         />
         <SummaryCard
-          title="Total Income"
+          title={t("totalIncome")}
           value={summary.totalIncome}
           icon={TrendingUp}
           color="green"
@@ -72,7 +80,7 @@ const Dashboard: React.FC = () => {
           trend={summary.totalIncome > 0 ? 'up' : 'neutral'}
         />
         <SummaryCard
-          title="Total Expenses"
+          title={t("totalExpenses")}
           value={summary.totalExpenses}
           icon={TrendingDown}
           color="red"
@@ -80,7 +88,7 @@ const Dashboard: React.FC = () => {
           trend={summary.totalExpenses > 0 ? 'down' : 'neutral'}
         />
         <SummaryCard
-          title="Transactions"
+          title={t("transactions")}
           value={summary.transactionCount}
           icon={CreditCard}
           color="purple"
@@ -100,24 +108,35 @@ const Dashboard: React.FC = () => {
 
       {/* Quick Actions */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">{t("quickActions")}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <button className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors duration-200">
+          {/* ເພີ່ມລາຍຮັບ → ເອີ້ນ onQuickAdd('income') */}
+          <button
+            onClick={() => onQuickAdd?.('income')}
+            className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors duration-200"
+          >
             <div className="text-center">
               <ArrowUpRight className="h-8 w-8 text-green-500 mx-auto mb-2" />
-              <span className="text-sm font-medium text-gray-700">Add Income</span>
+              <span className="text-sm font-medium text-gray-700">{t("addIncome")}</span>
             </div>
           </button>
-          <button className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors duration-200">
-            <div className="text-center">
+          {/* ເພີ່ມລາຍຈ່າຍ */}
+          <button
+            onClick={() => onQuickAdd?.('expense')}
+            className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors duration-200"
+          >            <div className="text-center">
               <ArrowDownRight className="h-8 w-8 text-red-500 mx-auto mb-2" />
-              <span className="text-sm font-medium text-gray-700">Add Expense</span>
+              <span className="text-sm font-medium text-gray-700">{t("addExpense")}</span>
             </div>
           </button>
-          <button className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors duration-200">
+          {/*  ໂອນ */}
+          <button
+            onClick={() => onQuickAdd?.('transfer')}
+            className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors duration-200"
+          >
             <div className="text-center">
               <CreditCard className="h-8 w-8 text-blue-500 mx-auto mb-2" />
-              <span className="text-sm font-medium text-gray-700">Transfer Funds</span>
+              <span className="text-sm font-medium text-gray-700">{t("transferFunds")}</span>
             </div>
           </button>
         </div>

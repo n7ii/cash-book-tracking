@@ -1,12 +1,16 @@
 import React from 'react';
-import { 
-  Home, 
-  Plus, 
-  History, 
-  BarChart3, 
+import {
+  Home,
+  Plus,
+  History,
+  BarChart3,
   Scale,
-  DollarSign 
+  DollarSign,
+  Store, 
+  Users,
+  ListChecks,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface NavigationProps {
   currentView: string;
@@ -14,12 +18,17 @@ interface NavigationProps {
 }
 
 const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChange }) => {
+  const { t } = useTranslation();
+
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: Home },
-    { id: 'add-transaction', label: 'Add Transaction', icon: Plus },
-    { id: 'history', label: 'History', icon: History },
-    { id: 'reports', label: 'Reports', icon: BarChart3 },
-    { id: 'reconciliation', label: 'Reconcile', icon: Scale },
+    { id: 'dashboard', label: t('dashboard'), icon: Home },
+    { id: 'add-transaction', label: t('addTransaction'), icon: Plus },
+    { id: 'history', label: t('history'), icon: History },
+    { id: 'reports', label: t('reports'), icon: BarChart3 },
+    { id: 'reconciliation', label: t('reconcile'), icon: Scale },
+    { id: 'markets', label: t('markets.title'), icon: Store }, 
+  { id: 'manage-users', label: t('manageUsers') || 'Manage Users', icon: Users },
+  { id: 'user-activity', label: 'User Activity', icon: ListChecks },
   ];
 
   return (
@@ -29,19 +38,24 @@ const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChange }) =>
           <div className="flex items-center">
             <div className="flex items-center space-x-2">
               <DollarSign className="h-8 w-8 text-blue-600" />
-              <h1 className="text-xl font-bold text-gray-900">FinanceTracker</h1>
+              <h1 className="text-xl font-bold text-gray-900">{t('financialTracker')}</h1>
             </div>
           </div>
-          
+
           <div className="hidden md:flex space-x-8">
-            {navItems.map(item => {
+            {navItems.map((item) => {
               const Icon = item.icon;
+
+              const isActive =
+                currentView === item.id ||
+                (item.id === 'markets' && currentView === 'market-detail');
+
               return (
                 <button
                   key={item.id}
                   onClick={() => onViewChange(item.id)}
                   className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
-                    currentView === item.id
+                    isActive
                       ? 'bg-blue-100 text-blue-700'
                       : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                   }`}
@@ -56,11 +70,11 @@ const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChange }) =>
           {/* Mobile menu */}
           <div className="md:hidden">
             <select
-              value={currentView}
+              value={currentView === 'market-detail' ? 'markets' : currentView}
               onChange={(e) => onViewChange(e.target.value)}
               className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             >
-              {navItems.map(item => (
+              {navItems.map((item) => (
                 <option key={item.id} value={item.id}>
                   {item.label}
                 </option>

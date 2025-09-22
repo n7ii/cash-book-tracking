@@ -3,8 +3,10 @@ import { BarChart3, Download, Calendar, PieChart } from 'lucide-react';
 import { useTransactions } from '../contexts/TransactionContext';
 import CategoryChart from './CategoryChart';
 import MonthlyTrends from './MonthlyTrends';
+import { useTranslation } from 'react-i18next';
 
 const Reports: React.FC = () => {
+  const { t } = useTranslation();
   const { getTransactionSummary, transactions } = useTransactions();
   const [reportType, setReportType] = useState<'overview' | 'categories' | 'trends'>('overview');
   const [dateRange, setDateRange] = useState({
@@ -43,8 +45,8 @@ const Reports: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Financial Reports</h1>
-          <p className="text-gray-600">Analyze your financial patterns and trends</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t("financialReports")}</h1>
+          <p className="text-gray-600">{t("analyzeTourFinancialPatternsAndTrends")}</p>
         </div>
         
         <button 
@@ -52,7 +54,7 @@ const Reports: React.FC = () => {
           className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
         >
           <Download className="h-4 w-4 mr-2" />
-          Export Report
+          {t("exportReport")}
         </button>
       </div>
 
@@ -61,7 +63,7 @@ const Reports: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Date Range
+            {t("dateRange")}
             </label>
             <div className="grid grid-cols-2 gap-4">
               <input
@@ -81,16 +83,16 @@ const Reports: React.FC = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Report Type
+            {t("reportType")}
             </label>
             <select
               value={reportType}
               onChange={(e) => setReportType(e.target.value as 'overview' | 'categories' | 'trends')}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="overview">Financial Overview</option>
-              <option value="categories">Category Breakdown</option>
-              <option value="trends">Monthly Trends</option>
+              <option value="overview">{t("financialOverview")}</option>
+              <option value="categories">{t("categoryBreakdown")}</option>
+              <option value="trends">{t("monthlyTrends")}</option>
             </select>
           </div>
         </div>
@@ -101,7 +103,7 @@ const Reports: React.FC = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Income</p>
+              <p className="text-sm font-medium text-gray-600">{t("totalIncome")}</p>
               <p className="text-2xl font-bold text-green-600">
                 {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(summary.totalIncome)}
               </p>
@@ -115,7 +117,7 @@ const Reports: React.FC = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Expenses</p>
+              <p className="text-sm font-medium text-gray-600">{t("totalExpenses")}</p>
               <p className="text-2xl font-bold text-red-600">
                 {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(summary.totalExpenses)}
               </p>
@@ -129,9 +131,9 @@ const Reports: React.FC = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Net Balance</p>
+              <p className="text-sm font-medium text-gray-600">{t("netBanlance")}</p>
               <p className={`text-2xl font-bold ${summary.netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(summary.netBalance)}
+                {new Intl.NumberFormat('lo-LA', { style: 'currency', currency: 'LAK' }).format(summary.netBalance)}
               </p>
             </div>
             <div className={`p-3 rounded-lg ${summary.netBalance >= 0 ? 'bg-green-100' : 'bg-red-100'}`}>
@@ -143,7 +145,7 @@ const Reports: React.FC = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Transactions</p>
+              <p className="text-sm font-medium text-gray-600">{t("transactions")}</p>
               <p className="text-2xl font-bold text-gray-900">{summary.transactionCount}</p>
             </div>
             <div className="p-3 bg-purple-100 rounded-lg">

@@ -2,8 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { Search, Filter, Download, Edit, Trash2, Calendar } from 'lucide-react';
 import { useTransactions } from '../contexts/TransactionContext';
 import { Transaction } from '../types/Transaction';
+import { useTranslation } from 'react-i18next';
 
 const TransactionHistory: React.FC = () => {
+  const { t } = useTranslation();
   const { transactions, deleteTransaction } = useTransactions();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | Transaction['type']>('all');
@@ -60,9 +62,9 @@ const TransactionHistory: React.FC = () => {
   }, [transactions]);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('lo-LA', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'LAK',
     }).format(amount);
   };
 
@@ -80,13 +82,13 @@ const TransactionHistory: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Transaction History</h1>
-          <p className="text-gray-600">View and manage all your financial transactions</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t("transactionHistory")}</h1>
+          <p className="text-gray-600">{t("viewAndManageAllYourFinancialTransactions")}</p>
         </div>
         
         <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200">
           <Download className="h-4 w-4 mr-2" />
-          Export CSV
+          {t("exportCSV")}
         </button>
       </div>
 
@@ -96,13 +98,13 @@ const TransactionHistory: React.FC = () => {
           {/* Search */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Search
+              {t("search")}
             </label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search transactions..."
+                placeholder={t("searchTransactions")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -113,33 +115,33 @@ const TransactionHistory: React.FC = () => {
           {/* Type Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Type
+            {t("type")}
             </label>
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value as 'all' | Transaction['type'])}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="all">All Types</option>
-              <option value="income">Income</option>
-              <option value="expense">Expense</option>
-              <option value="transfer">Transfer</option>
+              <option value="all">{t("allTypes")}</option>
+              <option value="income">{t("income")}</option>
+              <option value="expense">{t("expenses")}</option>
+              <option value="transfer">{t("transfer")}</option>
             </select>
           </div>
 
           {/* Category Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Category
+            {t("category")}
             </label>
             <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="">All Categories</option>
+              <option value="">{t("allCategories")}</option>
               {uniqueCategories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
+  <option key={cat} value={cat}>{t(`category.${cat}`)}</option>
               ))}
             </select>
           </div>
@@ -147,7 +149,7 @@ const TransactionHistory: React.FC = () => {
           {/* Sort */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Sort By
+            {t("allTypes")}
             </label>
             <div className="flex space-x-2">
               <select
@@ -155,8 +157,8 @@ const TransactionHistory: React.FC = () => {
                 onChange={(e) => setSortBy(e.target.value as 'date' | 'amount')}
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="date">Date</option>
-                <option value="amount">Amount</option>
+                <option value="date">{t("date")}</option>
+                <option value="amount">{t("amount")}</option>
               </select>
               <button
                 type="button"
@@ -173,8 +175,8 @@ const TransactionHistory: React.FC = () => {
       {/* Results Summary */}
       <div className="bg-blue-50 rounded-lg p-4">
         <p className="text-blue-800">
-          Showing <span className="font-semibold">{filteredTransactions.length}</span> of{' '}
-          <span className="font-semibold">{transactions.length}</span> transactions
+        {t("showing")} <span className="font-semibold">{filteredTransactions.length}</span> {t("of")}{' '}
+          <span className="font-semibold">{transactions.length}</span> {t("transactions")}
         </p>
       </div>
 
@@ -183,7 +185,7 @@ const TransactionHistory: React.FC = () => {
         {filteredTransactions.length === 0 ? (
           <div className="text-center py-12">
             <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">No transactions found matching your criteria</p>
+            <p className="text-gray-500">{t("noTransactionsFoundMatchingYourCriteria")}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -191,25 +193,25 @@ const TransactionHistory: React.FC = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
+                  {t("date")}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Description
+                  {t("description")}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
+                  {t("type")}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Category
+                  {t("category")}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Amount
+                  {t("amount")}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Method
+                  {t("method")}
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                  {t("transactions")}
                   </th>
                 </tr>
               </thead>
@@ -223,7 +225,7 @@ const TransactionHistory: React.FC = () => {
                       <div>
                         <div className="font-medium">{transaction.description}</div>
                         {transaction.partyInvolved && (
-                          <div className="text-gray-500 text-xs">with {transaction.partyInvolved}</div>
+                          <div className="text-gray-500 text-xs">{t("with")} {transaction.partyInvolved}</div>
                         )}
                       </div>
                     </td>
@@ -233,7 +235,7 @@ const TransactionHistory: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {transaction.category}
+                    {t(`category.${transaction.category}`)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <span className={

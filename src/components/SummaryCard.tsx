@@ -33,9 +33,9 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
 
   const formatValue = (val: number) => {
     if (format === 'currency') {
-      return new Intl.NumberFormat('en-US', {
+      return new Intl.NumberFormat('lo-LA', {
         style: 'currency',
-        currency: 'USD',
+        currency: 'LAK',
       }).format(val);
     }
     return val.toLocaleString();

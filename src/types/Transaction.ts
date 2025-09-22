@@ -10,6 +10,7 @@ export interface Transaction {
   notes?: string;
   createdAt: string;
   updatedAt: string;
+  marketId?: string;
 }
 
 export interface TransactionSummary {

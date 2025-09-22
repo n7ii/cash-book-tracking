@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { PieChart } from 'lucide-react';
 import { Transaction } from '../types/Transaction';
+import { useTranslation } from 'react-i18next';
 
 interface CategoryChartProps {
   transactions: Transaction[];
@@ -8,6 +9,7 @@ interface CategoryChartProps {
 }
 
 const CategoryChart: React.FC<CategoryChartProps> = ({ transactions, dateRange }) => {
+  const { t } = useTranslation();
   const categoryData = useMemo(() => {
     const filteredTransactions = transactions.filter(txn => {
       const txnDate = new Date(txn.date);
@@ -49,13 +51,13 @@ const CategoryChart: React.FC<CategoryChartProps> = ({ transactions, dateRange }
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div className="flex items-center space-x-2 mb-6">
         <PieChart className="h-5 w-5 text-gray-400" />
-        <h3 className="text-lg font-semibold text-gray-900">Expense Categories</h3>
+        <h3 className="text-lg font-semibold text-gray-900">{t("expensesCategories")}</h3>
       </div>
 
       {categoryData.length === 0 ? (
         <div className="text-center py-12">
           <PieChart className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500">No expense data available for this period</p>
+          <p className="text-gray-500">{t("noExpenseDataAvailableForThisPeriod")}</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -66,7 +68,7 @@ const CategoryChart: React.FC<CategoryChartProps> = ({ transactions, dateRange }
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-sm font-medium text-gray-900">{item.category}</span>
                   <span className="text-sm text-gray-600">
-                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.amount)}
+                    {new Intl.NumberFormat('lo-LA', { style: 'currency', currency: 'LAK' }).format(item.amount)}
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
