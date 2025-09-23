@@ -1,0 +1,7 @@
+## get balance: 
+
+*GET /api/admin/reports/balance
+
+final headers = {
+  'Content-Type': 'application/json', 
+};
