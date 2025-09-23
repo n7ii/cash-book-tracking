@@ -1,0 +1,38 @@
+## ✅ Success Codes (2xx)
+200 OK: Use this for a successful GET request.
+
+Example: When an admin requests a list of all users and you send the list back successfully.
+
+201 Created: Use this when a POST request successfully creates something new.
+
+Example: When a new user registers through /api/users/register, your API should respond with 201.
+
+
+
+
+
+## ❌ Client Error Codes (4xx) - "The Client's Fault"
+400 Bad Request: The client sent invalid or missing data.
+
+Example: Someone tries to register but doesn't include a password in the request body. Your validation should catch this and return a 400.
+
+401 Unauthorized: The person isn't logged in.
+
+Example: Someone who is not logged in tries to access a protected page like /api/collections.
+
+403 Forbidden: The person is logged in but doesn't have permission.
+
+Example: A regular 'Employee' tries to access an admin-only page like /api/admin/all-users.
+
+404 Not Found: The URL or requested item doesn't exist.
+
+Example: A user tries to visit /api/this-page-does-not-exist.
+
+
+
+
+
+## 🔥 Server Error Codes (5xx) - "Our Fault"
+500 Internal Server Error: A generic error for when something unexpected breaks on your backend.
+
+Example: Your code fails to connect to the database because the database container is stopped.

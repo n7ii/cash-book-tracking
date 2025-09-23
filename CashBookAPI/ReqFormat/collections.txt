@@ -1,0 +1,135 @@
+## get Collection: 
+
+*GET /api/collections
+
+final headers = {
+  'Authorization': 'Bearer $token',   // Needed to prove who the user is
+};
+
+
+
+
+
+## get single collection: 
+
+*GET /api/collections/:id
+
+final headers = {
+  'Content-Type': 'application/json', 
+};
+
+
+
+
+
+## Add new Collection: 
+
+POST /api/collections
+
+final headers = {
+  'Content-Type': 'application/json', 
+  'Authorization': 'Bearer $token', 
+};
+
+final body = jsonEncode({
+    {
+  "member_id": 3,
+  "total": 125000,
+  "photo_url": null,
+  "notes": "Collection from Morning Market.",
+  "market_id": 1,
+  "details": [
+    { "member_id": 1, "amount": 50000, "notes": "On time" },
+    { "member_id": 4, "amount": 75000, "notes": "Paid extra" }
+  ]
+}
+    });
+
+
+
+
+
+## update Collection: 
+
+*PUT /api/collections/:id
+
+final headers = {
+  'Content-Type': 'application/json', // Needed if sending a JSON body
+  'Authorization': 'Bearer $token',   // Needed to prove who the user is
+};
+
+final body = jsonEncode({
+    {
+  "total": 95000,
+  "notes": "Corrected amount.",
+  "edit_reason": "User made a calculation mistake on the initial entry."
+}
+    });
+
+
+
+
+
+## delete Collection: 
+
+*POST /api/collections/:id/delete
+
+final headers = {
+  'Content-Type': 'application/json', // Needed if sending a JSON body
+  'Authorization': 'Bearer $token',   // Needed to prove who the user is
+};
+final body = jsonEncode({
+    {
+  "reason": "Customer paid off their loan in full."
+}
+    });
+
+
+
+
+
+## get Collection details: 
+
+*GET /api/collections/:id/details
+
+final headers = {
+  'Authorization': 'Bearer $token',   // Needed to prove who the user is
+};
+
+
+
+
+
+## update Collection details: 
+
+*PUT /api/collections/:id/member/:memberId
+
+final headers = {
+  'Content-Type': 'application/json', // Needed if sending a JSON body
+  'Authorization': 'Bearer $token',   // Needed to prove who the user is
+};
+final body = jsonEncode({
+    {
+  "amount": 55000,
+  "notes": "Corrected amount.",
+  "edit_reason": "Typo in original entry."
+}
+    });
+
+
+
+
+
+## delete Collection: 
+
+*POST /api/collections/:id/details/member/:memberId/delete
+
+final headers = {
+  'Content-Type': 'application/json', // Needed if sending a JSON body
+  'Authorization': 'Bearer $token',   // Needed to prove who the user is
+};
+final body = jsonEncode({
+    {
+  "reason": "This payment was recorded in error."
+}
+    });
