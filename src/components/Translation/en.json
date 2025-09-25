@@ -134,6 +134,12 @@
   "interest": "Interest",
   "penalty": "Penalty",
   "other": "Other"
+},
+"UsersActivity": {
+  "userActivity": "User Activity",
+  "TrendingUp": "Trending Up",
+  "TrendingDown": "Trending Down",
+  "CreditCard": "Credit Card"
 }
   }
   

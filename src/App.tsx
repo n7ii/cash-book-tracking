@@ -6,7 +6,7 @@ import TransactionForm from './components/TransactionForm';
 import TransactionHistory from './components/TransactionHistory';
 import Reports from './components/Reports';
 import Reconciliation from './components/Reconciliation';
-import Navigation from './components/Navigation';
+
 
 import Markets from './components/Markets';
 import MarketDetail from './components/MarketDetail';
@@ -20,10 +20,13 @@ import { UsersProvider } from './contexts/UsersContext';
 import UserActivity from './components/UsersActivity';
 import ActivityDetail from './components/ActivityDetail';
 
+import AppHeader from "./components/AppHeader";
+import type { ViewKey } from './types/navigation';
+
 type TxType = 'income' | 'expense' | 'transfer';
 
 function App() {
-  const [currentView, setCurrentView] = useState<string>('dashboard');
+  const [currentView, setCurrentView] = useState<ViewKey>('dashboard');
 
   const [presetTxType, setPresetTxType] = useState<TxType | null>(null);
 
@@ -36,15 +39,12 @@ function App() {
     setCurrentView('add-transaction');
   };
 
-  const handleViewChange = (view: string) => {
-    setPresetTxType(null);
-
-    if (view !== 'market-detail') {
-      setSelectedMarketId(null);
-    }
-
-    setCurrentView(view);
-  };
+  const handleViewChange = (view: ViewKey) => {
+  setPresetTxType(null);
+  if (view !== 'market-detail') setSelectedMarketId(null);
+  setCurrentView(view);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
 
   const renderContent = () => {
     switch (currentView) {
@@ -134,7 +134,7 @@ function App() {
       <MarketProvider>
         <UsersProvider>
         <div className="min-h-screen bg-gray-50">
-          <Navigation currentView={currentView} onViewChange={handleViewChange} />
+          <AppHeader currentView={currentView} onNavigate={handleViewChange} />
           <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {renderContent()}
           </main>
