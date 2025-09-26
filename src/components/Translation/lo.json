@@ -43,7 +43,7 @@
   "reconcileWeeklyOrMonthly": "ການປຽບທຽບປະຈຳອາທິດ ຫຼື ປະຈຳເດືອນ",
   "keepReceiptsForVerification": "ເກັບໃບບິນໄວ້ສຳລັບການກວດສອບ",
   "enterTransactionsPromptly": "ປ້ອນທຸລະກຳໃຫ້ທັນເວລາ",
-  "financialReports": "ວາຍງານການເງິນ",
+  "financialReports": "ລາຍງານການເງິນ",
   "analyzeTourFinancialPatternsAndTrends": "ວິເຄາະແນວໂນ້ມ ແລະ ຮູບແບບການເງິນ",
   "exportReport": "ສົ່ງອອກລາຍງານ",
   "dateRange": "ຂອບເຂດມື້",
@@ -134,5 +134,11 @@
   "netChange": "ປ່ຽນແປງຍອດ",
 "markets": { "title": "ຕະຫຼາດ","searchPlaceholder": "ຄົ້ນຫາຕະຫຼາດ ຕາມໄອດີ ຫຼື ຊື່" },
 "financialTracker":"ລະບົບຕິດຕາມລາຍຮັບ-ຈ່າຍ",
-"noResults": "ບໍ່ພົບຂໍ້ມູນ"
+"noResults": "ບໍ່ພົບຂໍ້ມູນ",
+"UsersActivity": {
+  "userActivity": "ກິດຈະກຳພະນັກງານ",
+  "TrendingUp": "ລາຍຮັບມື້ນີ້",
+  "TrendingDown": "ລາຍຈ່າຍມື້ນີ້",
+  "CreditCard": "ຈຳນວນກິດຈະກຳ"
+}
 }
