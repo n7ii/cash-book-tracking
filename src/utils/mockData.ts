@@ -15,6 +15,7 @@ export const generateMockTransactions = (): Transaction[] => {
       createdAt: '2025-01-15T09:00:00Z',
       updatedAt: '2025-01-15T09:00:00Z',
     },
+    
     {
       id: 'txn_2',
       date: '2025-01-14',
