@@ -1,5 +1,7 @@
 import React, { useMemo } from 'react';
-import { ListChecks } from 'lucide-react';
+import { CreditCard, ListChecks, TrendingDown, TrendingUp } from 'lucide-react';
+import SummaryCard from './SummaryCard';
+import { useTranslation } from 'react-i18next';
 import { loadActivities, ymd } from '../utils/Activities';
 
 type Props = {
@@ -9,6 +11,7 @@ type Props = {
 const money = (n: number) => `LAK ${n.toLocaleString()}`;
 
 const UserActivity: React.FC<Props> = ({ onOpenDetail }) => {
+  const { t } = useTranslation();
   const today = ymd();
 
   // filter to today's activities only (demo)
@@ -35,13 +38,32 @@ const UserActivity: React.FC<Props> = ({ onOpenDetail }) => {
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card label="ລາຍຮັບມື້ນີ້" value={money(summary.income)} color="text-green-600" />
-        <Card label="ລາຍຈ່າຍມື້ນີ້" value={money(summary.expense)} color="text-red-600" />
-        <Card label="ຈຳນວນລາຍການ" value={String(summary.count)} />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <SummaryCard
+          title={t('totalIncome')}
+          value={summary.income}
+          icon={TrendingUp}
+          color="green"
+          format="currency"
+          trend={summary.income > 0 ? 'up' : 'neutral'}
+        />
+        <SummaryCard
+          title={t('totalExpenses')}
+          value={summary.expense}
+          icon={TrendingDown}
+          color="red"
+          format="currency"
+          trend={summary.expense > 0 ? 'down' : 'neutral'}
+        />
+        <SummaryCard
+          title={t('transactions')}
+          value={summary.count}
+          icon={CreditCard}
+          color="purple"
+          format="number"
+        />
       </div>
 
-      {/* List แบบ market */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
         <table className="w-full text-left">
           <thead className="border-b">
@@ -93,12 +115,5 @@ const UserActivity: React.FC<Props> = ({ onOpenDetail }) => {
     </div>
   );
 };
-
-const Card = ({ label, value, color }: { label: string; value: string; color?: string }) => (
-  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-    <div className="text-sm text-gray-600">{label}</div>
-    <div className={`text-2xl font-bold ${color || 'text-gray-900'}`}>{value}</div>
-  </div>
-);
 
 export default UserActivity;
