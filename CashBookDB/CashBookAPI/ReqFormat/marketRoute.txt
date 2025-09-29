@@ -1,0 +1,92 @@
+## create market: 
+
+*POST /api/markets
+
+final headers = {
+  'Content-Type': 'application/json', // Needed if sending a JSON body
+  'Authorization': 'Bearer $token',   // Needed to prove who the user is
+};
+final body = jsonEncode({
+    ---if user---
+    {
+  "Mname": "Thongkhankham Market",
+  "Address": 1 
+}
+
+    ---if admin---
+    {
+  "Mname": "Phonthan Market",
+  "Address": 1,
+  "responsible_by": 9
+}
+    });
+
+
+
+
+
+## get market: 
+
+*GET /api/market?search=something&page=1&limit=10
+
+final headers = {
+  'Authorization': 'Bearer $token',   // Needed to prove who the user is
+};
+
+
+
+
+## get single market: 
+
+*GET /api/market/:id
+
+final headers = {
+  'Authorization': 'Bearer $token',   // Needed to prove who the user is
+};
+
+
+
+
+
+## update market: 
+
+*PUT /api/market/:id
+
+final headers = {
+  'Content-Type': 'application/json', // Needed if sending a JSON body
+  'Authorization': 'Bearer $token',   // Needed to prove who the user is
+};
+final body = jsonEncode({
+    ---if user---
+    {
+  "Mname": "Thongkhankham Morning Market",
+  "Address": 1,
+  "edit_reason": "Corrected the official market name."
+}
+
+    ---if admin---
+{
+  "Mname": "Thongkhankham Morning Market",
+  "Address": 1,
+  "responsible_by": 8,
+  "edit_reason": "Re-assigned primary employee."
+}
+    });
+
+
+
+
+
+## delete market: 
+
+*DELETE /api/markets/:id/delete
+
+final headers = {
+  'Content-Type': 'application/json', // Needed if sending a JSON body
+  'Authorization': 'Bearer $token',   // Needed to prove who the user is
+};
+final body = jsonEncode({
+    {
+  "reason": "This market has been permanently closed."
+}
+    });

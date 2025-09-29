@@ -1,0 +1,39 @@
+## Login: when login in frontend when store name, store token too
+
+*POST /api/users/login
+
+final headers = {
+      'Content-Type': 'application/json',
+    };
+
+final body = jsonEncode({
+      {
+  "username": "vanh.c",
+  "password": "aStrongPassword123"
+}
+    });
+
+
+
+## Register:
+
+*POST /api/users/register
+
+final headers = {
+      'Content-Type': 'application/json',
+    };
+
+final body = jsonEncode({
+      {
+  "Fname": "Vanh",
+  "Lname": "Chantha",
+  "username": "vanh.c",
+  "password": "aStrongPassword123",
+  "phone": "0209876543",
+  "birth_date": "1998-11-30",
+  "gender": "Male",
+  "address": 1,
+  "role_id": 2,
+  "is_active": 1
+}
+    });

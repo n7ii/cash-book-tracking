@@ -1,0 +1,19 @@
+## get balance: 
+
+*GET /api/admin/reports/balance?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
+
+final headers = {
+  'Content-Type': 'application/json', 
+};
+
+
+
+
+
+## get balance: 
+
+*GET /api/admin/reports/cashflow?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
+
+final headers = {
+  'Content-Type': 'application/json', 
+};

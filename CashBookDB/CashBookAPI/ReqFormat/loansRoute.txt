@@ -1,0 +1,82 @@
+## create loans: 
+
+*post /api/loans
+
+final headers = {
+  'Content-Type': 'application/json', 
+  'Authorization': 'Bearer $token', 
+};
+
+final body = jsonEncode({
+    {
+  "member_id": 1,
+  "total": 500000,
+  "end_date": "2026-09-22",
+  "status": 1
+}
+    });
+
+
+
+
+
+## get all loans for employee: 
+
+*GET /api/loans?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&page=1&limit=20&search=Sokdee
+
+final headers = {
+  'Authorization': 'Bearer $token', 
+};
+
+
+
+
+
+## get single loans employee: 
+
+*GET /api/loans/:id
+
+final headers = {
+  'Authorization': 'Bearer $token', 
+};
+
+
+
+
+
+## update loans: 
+
+*PUT /api/loans/:id
+
+final headers = {
+  'Content-Type': 'application/json', 
+  'Authorization': 'Bearer $token', 
+};
+
+final body = jsonEncode({
+    {
+  "total": 500000,
+  "end_date": "2026-10-01",
+  "status": 0,
+  "edit_reason": "Customer has paid off the loan in full."
+}
+    });
+
+
+
+
+
+## delete loans: 
+
+*post /api/loans/:id/delete
+
+final headers = {
+  'Content-Type': 'application/json', 
+  'Authorization': 'Bearer $token', 
+};
+
+final body = jsonEncode({
+    {
+  "reason": "Loan was created in error and needs to be removed."
+}
+    });

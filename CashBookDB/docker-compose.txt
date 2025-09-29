@@ -1,0 +1,38 @@
+# This tells Docker which version of the Compose file format we're using.
+version: '3.8'
+
+# This section is where we define all the containers (services) we need.
+services:
+
+  # --- Service 1: The MySQL Database ---
+  db:
+    image: mysql:8.0
+    container_name: cashbook_tracking-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: c45hb00k1609   # <-- CHANGE THIS
+      MYSQL_DATABASE: cashbook_db
+      MYSQL_USER: cbtadmin
+      MYSQL_PASSWORD: cbt1609  # <-- CHANGE THIS
+    ports:
+      # Connects your PC's port 3306 to the container's port 3306
+      - "3306:3306"
+    volumes:
+      # This makes sure our database data is saved permanently
+      - db_data:/var/lib/mysql
+
+  # --- Service 2: The Database Management Tool (phpMyAdmin) ---
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: cashbook_tracking-pma
+    restart: always
+    ports:
+      # Connects your PC's port 8080 to the container's port 80
+      - "8081:80"
+    environment:
+      PMA_HOST: db # Tells phpMyAdmin which database service to connect to
+      PMA_PORT: 3306
+
+# This section defines the named volume we used above for persistent data storage.
+volumes:
+  db_data:
