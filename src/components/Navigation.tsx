@@ -29,6 +29,7 @@ const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChange }) =>
     { id: 'markets', label: t('markets.title'), icon: Store }, 
   { id: 'manage-users', label: t('manageUsers') || 'Manage Users', icon: Users },
   { id: 'user-activity', label: 'User Activity', icon: ListChecks },
+  { id: 'loan-detail', label: 'loan detail', icon: ListChecks }, 
   ];
 
   return (

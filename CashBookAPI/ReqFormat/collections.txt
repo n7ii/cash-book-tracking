@@ -1,6 +1,6 @@
 ## get Collection: 
 
-*GET /api/collections
+*GET /api/collections?search=something&page=1&limit=10
 
 final headers = {
   'Authorization': 'Bearer $token',   // Needed to prove who the user is
@@ -15,7 +15,19 @@ final headers = {
 *GET /api/collections/:id
 
 final headers = {
-  'Content-Type': 'application/json', 
+  'Authorization': 'Bearer $token',   // Needed to prove who the user is
+};
+
+
+
+
+
+## get unpaid customer: 
+
+*GET /api/collections/:id/unpaid
+
+final headers = {
+  'Authorization': 'Bearer $token',   // Needed to prove who the user is
 };
 
 
@@ -33,15 +45,18 @@ final headers = {
 
 final body = jsonEncode({
     {
-  "member_id": 3,
-  "total": 125000,
-  "photo_url": null,
-  "notes": "Collection from Morning Market.",
-  "market_id": 1,
-  "details": [
-    { "member_id": 1, "amount": 50000, "notes": "On time" },
-    { "member_id": 4, "amount": 75000, "notes": "Paid extra" }
-  ]
+    "member_id": 15,
+    "total": 510000,
+    "market_id": 1,
+    "notes": "Collection from Morning Market.",
+    "photo_url": null,
+    "type": "COLLECTION",                 
+    "category": "Daily Repayment",        
+    "payment_method": "Cash",             
+    "details": [
+        { "member_id": 8, "status": "PAID", "notes": "On time" },
+        { "member_id": 9, "status": "PAID", "notes": "Paid extra" }
+    ]
 }
     });
 

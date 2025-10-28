@@ -1,21 +1,32 @@
 import {
   Home, PlusCircle, History, BarChart2, Scale, Store, Users, Activity
 } from 'lucide-react';
-import type { ViewKey } from '../types/Navigation';
+import type { ViewKey } from '../types/navigation';
+
+
+
+const ADMIN_ONLY_VIEWS: ViewKey[] = [
+  'reports',
+  'reconciliation',
+  'manage-users',
+  'user-activity'
+];
 
 export default function AppHeader({
   currentView,
   onNavigate,
+  userRole
 }: {
   currentView: ViewKey;
   onNavigate: (key: ViewKey) => void;
+  userRole: number;
 }) {
   const activeKey: ViewKey =
     currentView === 'market-detail' ? 'markets' :
     currentView === 'activity-detail' ? 'user-activity' :
     currentView;
 
-  const NAVS: { key: ViewKey; label: string; icon: React.ElementType }[] = [
+  const ALL_NAVS: { key: ViewKey; label: string; icon: React.ElementType }[] = [
     { key: 'dashboard',       label: 'ຕິດຕາມລາຍຮັບ-ຈ່າຍ', icon: Home },
     { key: 'add-transaction', label: 'ເພີ່ມທຸລະກຳ',               icon: PlusCircle },
     { key: 'history',         label: 'ປະຫວັດ',               icon: History },
@@ -26,9 +37,17 @@ export default function AppHeader({
     { key: 'user-activity',   label: 'ກິດຈະກຳຂອງຜູ້ໃຊ້',             icon: Activity },
   ];
 
+  const visibleNavs = ALL_NAVS.filter(nav =>{
+    if(!ADMIN_ONLY_VIEWS.includes(nav.key)){
+      return true;
+    }
+    return userRole === 1;
+  })
+
   return (
     <header className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b">
       <div className="mx-auto max-w-7xl px-4 md:px-6">
+
         <div className="h-14 md:h-16 flex items-center gap-3">
           <div className="flex items-center gap-2 min-w-0">
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white">$</span>
@@ -39,7 +58,7 @@ export default function AppHeader({
 
           <nav className="hidden md:flex ml-auto overflow-x-auto whitespace-nowrap">
             <ul className="flex items-center gap-1">
-              {NAVS.map(({ key, label, icon: Icon }) => {
+              {visibleNavs.map(({ key, label, icon: Icon }) => {
                 const active = activeKey === key;
                 return (
                   <li key={key}>
@@ -66,7 +85,7 @@ export default function AppHeader({
         {/* mobile*/}
         <nav className="md:hidden -mb-2 pb-2 overflow-x-auto">
           <ul className="flex items-center justify-between gap-2">
-            {NAVS.map(({ key, label, icon: Icon }) => {
+            {visibleNavs.map(({ key, label, icon: Icon }) => {
               const active = activeKey === key;
               return (
                 <li key={key}>

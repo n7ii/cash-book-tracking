@@ -9,7 +9,9 @@ const pool = mysql.createPool({
   database: 'cashbook_db',
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  dateStrings: true,
+  timezone: '+00:00'
 });
 
 // A quick check to see if the pool is connected

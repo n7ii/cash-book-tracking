@@ -1,14 +1,37 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Transaction, TransactionSummary } from '../types/Transaction';
-import { generateMockTransactions } from '../utils/mockData';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, Dispatch, SetStateAction } from 'react';
+import axios from 'axios';
+import { Transaction } from '../types/Transaction';
 
+interface ApiResponse {
+  total: number;
+  page: number;
+  limit: number;
+  data: Transaction[];
+}
+
+// Add filterOptions to the context type
 interface TransactionContextType {
   transactions: Transaction[];
-  addTransaction: (transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  updateTransaction: (id: string, updates: Partial<Transaction>) => void;
-  deleteTransaction: (id: string) => void;
-  getTransactionSummary: (dateRange?: { start: string; end: string }) => TransactionSummary;
   loading: boolean;
+  totalTransactions: number;
+  currentPage: number;
+  totalPages: number;
+  limit: number;
+  filterOptions: { categories: string[], types: string[] }; // ADD THIS
+  setSearchTerm: Dispatch<SetStateAction<string>>;
+  setFilterType: Dispatch<SetStateAction<string>>;
+  setFilterCategory: Dispatch<SetStateAction<string>>;
+  sortBy: 'date' | 'amount';
+  setSortBy: Dispatch<SetStateAction<'date' | 'amount'>>;
+  sortOrder: 'asc' | 'desc';
+  setSortOrder: Dispatch<SetStateAction<'asc' | 'desc'>>;
+  setCurrentPage: Dispatch<SetStateAction<number>>;
+  dateRange: { start: string; end: string };
+  setDateRange: React.Dispatch<React.SetStateAction<{ start: string; end: string }>>;
+  refreshTransactions: () => void;
+  searchTerm: string;
+  filterType: string;
+  filterCategory: string;
 }
 
 const TransactionContext = createContext<TransactionContextType | undefined>(undefined);
@@ -21,83 +44,110 @@ export const useTransactions = () => {
   return context;
 };
 
-interface TransactionProviderProps {
-  children: ReactNode;
-}
-
-export const TransactionProvider: React.FC<TransactionProviderProps> = ({ children }) => {
+export const TransactionProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState({
+    start: '',
+    end: new Date().toISOString().split('T')[0], // Today
+  });
+  
+  // MOVE filterOptions state here
+  const [filterOptions, setFilterOptions] = useState<{ categories: string[], types: string[] }>({ categories: [], types: [] });
 
+  const [totalTransactions, setTotalTransactions] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [limit] = useState(20);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState('all');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [sortBy, setSortBy] = useState<'date' | 'amount'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  // MOVE the logic to fetch filter options here
   useEffect(() => {
-    // Initialize with mock data for demonstration
-    const mockData = generateMockTransactions();
-    setTransactions(mockData);
-    setLoading(false);
-  }, []);
-
-  const addTransaction = (transactionData: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newTransaction: Transaction = {
-      ...transactionData,
-      id: `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+    const fetchFilterOptions = async () => {
+        const token = sessionStorage.getItem('authToken');
+        if (!token) return;
+        try {
+            const response = await axios.get('http://localhost:3000/api/transactions/filters', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            setFilterOptions(response.data);
+        } catch (error) {
+            console.error("Failed to fetch filter options", error);
+        }
     };
-    setTransactions(prev => [newTransaction, ...prev]);
-  };
+    fetchFilterOptions();
+  }, []); // Runs once on component mount
 
-  const updateTransaction = (id: string, updates: Partial<Transaction>) => {
-    setTransactions(prev => prev.map(txn => 
-      txn.id === id 
-        ? { ...txn, ...updates, updatedAt: new Date().toISOString() }
-        : txn
-    ));
-  };
-
-  const deleteTransaction = (id: string) => {
-    setTransactions(prev => prev.filter(txn => txn.id !== id));
-  };
-
-  const getTransactionSummary = (dateRange?: { start: string; end: string }): TransactionSummary => {
-    let filteredTransactions = transactions;
-    
-    if (dateRange) {
-      filteredTransactions = transactions.filter(txn => {
-        const txnDate = new Date(txn.date);
-        const startDate = new Date(dateRange.start);
-        const endDate = new Date(dateRange.end);
-        return txnDate >= startDate && txnDate <= endDate;
-      });
+  const fetchTransactions = useCallback(async () => {
+    setLoading(true);
+    const token = sessionStorage.getItem('authToken');
+    if (!token) {
+        setLoading(false);
+        return;
     }
 
-    const totalIncome = filteredTransactions
-      .filter(txn => txn.type === 'income')
-      .reduce((sum, txn) => sum + txn.amount, 0);
+    try {
+      const response = await axios.get<ApiResponse>('http://localhost:3000/api/transactions', {
+        headers: { 'Authorization': `Bearer ${token}` },
+        params: {
+          page: currentPage,
+          limit,
+          search: searchTerm,
+          type: filterType === 'all' ? '' : filterType,
+          category: filterCategory,
+          sortBy,
+          sortOrder,
+          startDate: dateRange.start,
+          endDate: dateRange.end,     
+        },
+      });
 
-    const totalExpenses = filteredTransactions
-      .filter(txn => txn.type === 'expense')
-      .reduce((sum, txn) => sum + txn.amount, 0);
+      setTransactions(response.data.data);
+      setTotalTransactions(response.data.total);
+      setTotalPages(Math.ceil(response.data.total / limit));
+    } catch (error) {
+      console.error("Failed to fetch transactions:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, limit, searchTerm, filterType, filterCategory, sortBy, sortOrder, dateRange]);
 
-    const totalTransfers = filteredTransactions
-      .filter(txn => txn.type === 'transfer')
-      .reduce((sum, txn) => sum + txn.amount, 0);
+  useEffect(() => {
+    const handler = setTimeout(() => {
+        fetchTransactions();
+    }, 300); // Debounce to prevent too many API calls
 
-    return {
-      totalIncome,
-      totalExpenses,
-      totalTransfers,
-      netBalance: totalIncome - totalExpenses,
-      transactionCount: filteredTransactions.length,
+    return () => {
+        clearTimeout(handler);
     };
-  };
+  }, [fetchTransactions]);
 
   const value = {
     transactions,
-    addTransaction,
-    updateTransaction,
-    deleteTransaction,
-    getTransactionSummary,
     loading,
+    totalTransactions,
+    currentPage,
+    limit,
+    totalPages,
+    filterOptions, // ADD filterOptions to the value object
+    setSearchTerm,
+    setFilterType,
+    setFilterCategory,
+    setSortBy,
+    setSortOrder,
+    setCurrentPage,
+    dateRange,
+     sortBy,
+    sortOrder,    
+    setDateRange, 
+    refreshTransactions: fetchTransactions,
+    searchTerm,
+    filterType,
+    filterCategory,
   };
 
   return (

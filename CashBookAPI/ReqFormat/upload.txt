@@ -1,0 +1,21 @@
+## upload photo: 
+
+*POST /api/upload
+
+final headers = {
+  'Content-Type': 'application/json', 
+  'Authorization': 'Bearer $token', 
+};
+
+final body = jsonEncode({
+    const response = await fetch('http://localhost:3000/api/upload', {
+      method: 'POST',
+      headers: {
+        // IMPORTANT: DO NOT set the 'Content-Type' header yourself.
+        // The browser will automatically set it to 'multipart/form-data'
+        // with the correct boundary when you send a FormData object.
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData // The FormData object is the body
+    });
+    });

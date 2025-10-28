@@ -1,6 +1,6 @@
 ## get all user: 
 
-*GET /api/admin/users
+*GET /api/admin/users?search=something&page=1&limit=10
 
 final headers = {
   'Authorization': 'Bearer $token',   // Needed to prove who the user is
@@ -29,9 +29,31 @@ final body = jsonEncode({
 
 
 
+## add fund: 
+
+*post /api/admin/funds
+
+final headers = {
+  'Content-Type': 'application/json', 
+  'Authorization': 'Bearer $token', 
+};
+
+final body = jsonEncode({
+    {
+  "total": 10000000,
+  "notes": "Initial capital injection from owner.",
+  "member_id": 1,
+  "market_id": 
+}
+    });
+
+
+
+
+
 ## get all Collection: 
 
-*GET /api/admin/collections
+*GET /api/admin/collections?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&page=1&limit=10&search=something
 
 final headers = {
   'Authorization': 'Bearer $token',   // Needed to prove who the user is
@@ -43,7 +65,7 @@ final headers = {
 
 ## get all Expenses: 
 
-*get /api/admin/expenses
+*GET /api/admin/expenses?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&limit=10&page=1&search=something
 
 final headers = {
   'Authorization': 'Bearer $token',   // Needed to prove who the user is
@@ -65,6 +87,31 @@ final headers = {
 final body = jsonEncode({
     {
   "newPassword": "temporaryPassword123"
+}
+    });
+
+
+
+
+
+## update user data: 
+
+*PUT /api/admin/users/:id/password
+
+final headers = {
+  'Content-Type': 'application/json', 
+  'Authorization': 'Bearer $token', 
+};
+
+final body = jsonEncode({
+    {
+  "Fname": "Sokdee Updated",
+  "Lname": "Lao",
+  "phone": "02011112222",
+  "Email": "sokdee.lao@new-email.com",
+  "address": 1,
+  "role_id": 3,
+  "edit_reason": "User updated their contact information."
 }
     });
 
@@ -138,7 +185,7 @@ final headers = {
 
 ## update expenses: 
 
-*PUT /api/admin/loans
+*PUT /api/admin/expenses
 
 final headers = {
   'Content-Type': 'application/json', 
@@ -178,7 +225,7 @@ final body = jsonEncode({
 
 ## get all loans: 
 
-*post /api/admin/loans
+*GET /api/admin/loans?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&limit=10&page=1&search=Sokdee
 
 final headers = {
   'Content-Type': 'application/json', 

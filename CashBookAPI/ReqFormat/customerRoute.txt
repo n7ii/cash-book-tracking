@@ -1,6 +1,6 @@
 ## get customer loan details: 
 
-*GET /api/customers/1/loans
+*GET /api/customers/1/loans?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&search=something&page=1&limit=10
 
 final headers = {
   'Authorization': 'Bearer $token', 
@@ -12,7 +12,7 @@ final headers = {
 
 ## get customers: 
 
-*GET /api/customers
+*GET /api/customers?search=something&page=1&limit=10
 
 final headers = {
   'Authorization': 'Bearer $token', 
@@ -80,7 +80,7 @@ final body = jsonEncode({
 
 
 
-## update a customer: 
+## delete a customer: 
 
 *POST /api/customers/:id/delete
 
@@ -94,3 +94,39 @@ final body = jsonEncode({
   "reason": "Customer has moved to another province."
 }
     });
+
+
+
+
+
+## get collector: 
+
+*GET /api/customer/collector?search=something&page=1&limit=10
+
+final headers = {
+  'Authorization': 'Bearer $token', 
+}; 
+
+
+
+
+
+## get sum all loan: 
+
+*GET /api/customer/:id/outstanding-balance
+
+final headers = {
+  'Authorization': 'Bearer $token', 
+}; 
+
+
+
+
+
+## get sum lastest loan each person: 
+
+*GET /api/customer/:id/loans
+
+final headers = {
+  'Authorization': 'Bearer $token', 
+}; 
