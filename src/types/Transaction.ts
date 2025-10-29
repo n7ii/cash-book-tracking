@@ -1,16 +1,15 @@
 export interface Transaction {
-  id: string;
+  id: number;
   date: string;
-  type: 'income' | 'expense' | 'transfer';
-  description: string;
+  type: 'income' | 'expense' | 'loan' | 'transfer';
+  description: string | null;
+  category: string | null;
+  paymentMethod: string | null;
   amount: number;
-  category: string;
-  paymentMethod: 'cash' | 'card' | 'bank_transfer' | 'check' | 'other';
-  partyInvolved?: string;
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
-  marketId?: string;
+  partyInvolved?: string | null; // This was from an older version
+  collector?: string | null;     // This is the new field
+  employee?: string | null;      // ADD THIS LINE
+  market?: string | null;        // ADD THIS LINE
 }
 
 export interface TransactionSummary {

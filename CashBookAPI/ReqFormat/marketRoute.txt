@@ -27,11 +27,22 @@ final body = jsonEncode({
 
 ## get market: 
 
-*GET /api/market
+*GET /api/markets?search=something&page=1&limit=10
 
 final headers = {
   'Authorization': 'Bearer $token',   // Needed to prove who the user is
 };
+
+
+
+## get customers for each market: 
+
+*GET /api/:id/customer?search=something&page=1&limit=10
+
+final headers = {
+  'Authorization': 'Bearer $token',   // Needed to prove who the user is
+};
+
 
 
 

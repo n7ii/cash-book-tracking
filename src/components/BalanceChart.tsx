@@ -1,120 +1,80 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
-import { useTransactions } from '../contexts/TransactionContext';
 import { useTranslation } from 'react-i18next';
 
-interface BalanceChartProps {
+type TrendPoint = { date: string; totalIncome: number; totalExpenses: number };
+
+type Props = {
+  trends: TrendPoint[];
   dateRange: '7d' | '30d' | '90d';
-}
+  loading?: boolean;
+};
 
-const BalanceChart: React.FC<BalanceChartProps> = ({ dateRange }) => {
-  const { transactions } = useTransactions();
+const fLAK = (n: number) =>
+  new Intl.NumberFormat('lo-LA', {
+    style: 'currency',
+    currency: 'LAK',
+    maximumFractionDigits: 0,
+  }).format(n);
+
+export default function BalanceChart({ trends = [], dateRange, loading = false }: Props) {
   const { t } = useTranslation();
+  const hasData = trends.some((d) => d.totalIncome > 0 || d.totalExpenses > 0);
+  const maxValue = Math.max(...trends.map((d) => Math.max(d.totalIncome, d.totalExpenses)), 1);
+  const totalChange = trends.reduce((sum, d) => sum + (d.totalIncome - d.totalExpenses), 0);
 
-  const chartData = useMemo(() => {
-    const days = dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : 90;
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days + 1);
-
-    const dailyData = [];
-    let runningBalance = 0;
-
-    for (let i = 0; i < days; i++) {
-      const currentDate = new Date(startDate);
-      currentDate.setDate(startDate.getDate() + i);
-      const dateStr = currentDate.toISOString().split('T')[0];
-
-      const dayTransactions = transactions.filter(txn => txn.date === dateStr);
-      
-      const dayIncome = dayTransactions
-        .filter(txn => txn.type === 'income')
-        .reduce((sum, txn) => sum + txn.amount, 0);
-      
-      const dayExpenses = dayTransactions
-        .filter(txn => txn.type === 'expense')
-        .reduce((sum, txn) => sum + txn.amount, 0);
-
-      const netChange = dayIncome - dayExpenses;
-      runningBalance += netChange;
-
-      dailyData.push({
-        date: dateStr,
-        income: dayIncome,
-        expenses: dayExpenses,
-        balance: runningBalance,
-        netChange,
-      });
+  const shouldShowLabel = (index: number, total: number, dateStr: string) => {
+    if (dateRange === '7d') return true;
+    if (index === 0 || index === total - 1) return true;
+    if (dateRange === '30d') {
+      // ✅ แก้ไข: ใช้ Date object แทน
+      const date = new Date(dateStr + 'T00:00:00');
+      const day = date.getDate();
+      if ([1, 30, 31].includes(day)) return true;
+      return index % 3 === 0;
     }
-
-    return dailyData;
-  }, [transactions, dateRange]);
-
-  const maxValue = Math.max(...chartData.map(d => Math.max(d.income, d.expenses)));
-  const totalChange = chartData[chartData.length - 1]?.balance - (chartData[0]?.balance - chartData[0]?.netChange) || 0;
-
-  const getBarSpacing = () => {
-    switch(dateRange) {
-      case '7d': return 'space-x-2';
-      case '30d': return 'space-x-1';
-      case '90d': return 'space-x-0.5';
-      default: return 'space-x-1';
-    }
-  };
-
-  const getBarWidth = () => {
-    switch(dateRange) {
-      case '7d': return '45%';
-      case '30d': return '40%';
-      case '90d': return '35%';
-      default: return '40%';
-    }
-  };
-
-  const shouldShowLabel = (index: number, total: number) => {
-    if (dateRange === '7d') return true; 
-    if (dateRange === '30d') return index % 3 === 0 || index === total - 1;
     if (dateRange === '90d') return index % 7 === 0 || index === total - 1;
     return true;
   };
 
+  // ✅ แก้ไข: ใช้ Date object แทนการ split string
   const formatDateLabel = (dateStr: string) => {
-    const date = new Date(dateStr);
-    if (dateRange === '90d') {
-      return date.toLocaleDateString('lo-LA', { 
-        day: 'numeric', 
-        month: 'numeric' 
-      });
-    } else {
-      return date.toLocaleDateString('lo-LA', { 
-        month: 'numeric', 
-        day: 'numeric' 
-      });
-    }
+    // สร้าง Date object ที่ไม่มีปัญหา timezone
+    const date = new Date(dateStr + 'T00:00:00');
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = String(date.getFullYear()).slice(-2);
+    
+    return dateRange === '90d' ? `${day}/${month}` : `${day}/${month}/${year}`;
   };
+
+  const getBarSpacing = () => (dateRange === '7d' ? 'space-x-2' : dateRange === '30d' ? 'space-x-1' : 'space-x-0.5');
+  const getBarWidth = () => (dateRange === '7d' ? '45%' : dateRange === '30d' ? '40%' : '35%');
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-2">
           <BarChart3 className="h-5 w-5 text-gray-400" />
-          <h3 className="text-lg font-semibold text-gray-900">{t("balanceTrend")}</h3>
+          <h3 className="text-lg font-semibold text-gray-900">
+            {t('balanceTrend') || 'ແນວໂນ້ມຍອດບັນຊີ'}
+          </h3>
         </div>
         <div className="flex items-center space-x-4 text-sm">
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 bg-green-500 rounded"></div>
-            <span className="text-gray-600">{t("income")}</span>
+            <span className="text-gray-600">{t('income') || 'ລາຍຮັບ'}</span>
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 bg-red-500 rounded"></div>
-            <span className="text-gray-600">{t("expenses")}</span>
+            <span className="text-gray-600">{t('expenses') || 'ລາຍຈ່າຍ'}</span>
           </div>
         </div>
       </div>
-
-      {/* Period Summary */}
       <div className="flex items-center justify-between mb-6 p-4 bg-gray-50 rounded-lg">
-        <span className="text-sm text-gray-600">{t("netChange")} ({dateRange})</span>
+        <span className="text-sm text-gray-600">
+          {t('netChange') || 'ການປ່ຽນແປງສຸດທິ'} ({dateRange})
+        </span>
         <div className="flex items-center space-x-2">
           {totalChange >= 0 ? (
             <TrendingUp className="h-4 w-4 text-green-600" />
@@ -122,68 +82,68 @@ const BalanceChart: React.FC<BalanceChartProps> = ({ dateRange }) => {
             <TrendingDown className="h-4 w-4 text-red-600" />
           )}
           <span className={`font-semibold ${totalChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            {new Intl.NumberFormat('lo-LA', { 
-              style: 'currency', 
+            {new Intl.NumberFormat('lo-LA', {
+              style: 'currency',
               currency: 'LAK',
-              signDisplay: 'always'
+              signDisplay: 'always',
+              maximumFractionDigits: 0,
             }).format(totalChange)}
           </span>
         </div>
       </div>
-
-      {/* Chart */}
       <div className="h-64 overflow-x-auto">
-        <div className={`h-full flex items-end justify-between ${getBarSpacing()} min-w-full`} 
-             style={{ minWidth: dateRange === '90d' ? `${90 * 8}px` : 'auto' }}>
-          {chartData.map((day, index) => {
-            const incomeHeight = maxValue > 0 ? (day.income / maxValue) * 100 : 0;
-            const expenseHeight = maxValue > 0 ? (day.expenses / maxValue) * 100 : 0;
-            const showLabel = shouldShowLabel(index, chartData.length);
-            
-            return (
-              <div key={day.date} className="flex-shrink-0 flex flex-col items-center space-y-1"
-                   style={{ minWidth: dateRange === '90d' ? '8px' : 'auto' }}>
-                {/* Bars */}
-                <div className="w-full flex flex-col items-center space-y-1 h-48">
-                  <div className="w-full flex justify-center items-end space-x-0.5 flex-1">
-                    {/* Income bar */}
-                    <div
-                      className="bg-green-500 rounded-t opacity-80 hover:opacity-100 transition-opacity duration-200 min-h-[2px]"
-                      style={{ 
-                        height: `${incomeHeight}%`,
-                        width: getBarWidth()
-                      }}
-                      title={`${formatDateLabel(day.date)} - Income: ${new Intl.NumberFormat('lo-LA', { style: 'currency', currency: 'LAK' }).format(day.income)}`}
-                    ></div>
-                    
-                    {/* Expense bar */}
-                    <div
-                      className="bg-red-500 rounded-t opacity-80 hover:opacity-100 transition-opacity duration-200 min-h-[2px]"
-                      style={{ 
-                        height: `${expenseHeight}%`,
-                        width: getBarWidth()
-                      }}
-                      title={`${formatDateLabel(day.date)} - Expenses: ${new Intl.NumberFormat('lo-LA', { style: 'currency', currency: 'LAK' }).format(day.expenses)}`}
-                    ></div>
+        {loading ? (
+          <div className="h-full flex items-center justify-center text-gray-500">
+            {t('loading') || 'ກຳລັງໂຫຼດ...'}
+          </div>
+        ) : !hasData ? (
+          <div className="h-full flex flex-col items-center justify-center text-gray-400">
+            <BarChart3 className="h-12 w-12 mb-2 opacity-50" />
+            <p className="text-sm">
+              {t('noDataInRange') || `ບໍ່ມີຂໍ້ມູນໃນຊ່ວງ ${dateRange === '7d' ? '7' : dateRange === '30d' ? '30' : '90'} ວັນ`}
+            </p>
+          </div>
+        ) : (
+          <div
+            className={`h-full flex items-end justify-between ${getBarSpacing()} min-w-full`}
+            style={{
+              minWidth:
+                dateRange === '90d' ? `${90 * 8}px` : dateRange === '30d' ? `${30 * 12}px` : 'auto',
+            }}
+          >
+            {trends.map((day, index) => {
+              const incomeHeight = maxValue > 0 ? (day.totalIncome / maxValue) * 100 : 0;
+              const expenseHeight = maxValue > 0 ? (day.totalExpenses / maxValue) * 100 : 0;
+              const showLabel = shouldShowLabel(index, trends.length, day.date);
+              return (
+                <div key={day.date} className="flex-shrink-0 flex flex-col items-center space-y-1">
+                  <div className="w-full flex flex-col items-center space-y-1 h-48">
+                    <div className="w-full flex justify-center items-end space-x-0.5 flex-1">
+                      <div
+                        className="bg-green-500 rounded-t opacity-80 hover:opacity-100 transition-opacity duration-200 min-h-[2px]"
+                        style={{ height: `${incomeHeight}%`, width: getBarWidth() }}
+                        title={`${formatDateLabel(day.date)} • ${t('income') || 'ລາຍຮັບ'}: ${fLAK(day.totalIncome)}`}
+                      />
+                      <div
+                        className="bg-red-500 rounded-t opacity-80 hover:opacity-100 transition-opacity duration-200 min-h-[2px]"
+                        style={{ height: `${expenseHeight}%`, width: getBarWidth() }}
+                        title={`${formatDateLabel(day.date)} • ${t('expenses') || 'ລາຍຈ່າຍ'}: ${fLAK(day.totalExpenses)}`}
+                      />
+                    </div>
                   </div>
+                  {showLabel ? (
+                    <span className={`text-xs text-gray-500 transform -rotate-45 origin-center whitespace-nowrap ${dateRange === '90d' ? 'text-[10px]' : ''}`}>
+                      {formatDateLabel(day.date)}
+                    </span>
+                  ) : (
+                    <div className="h-4" />
+                  )}
                 </div>
-                
-                {/* Date label*/}
-                {showLabel && (
-                  <span className={`text-xs text-gray-500 transform -rotate-45 origin-center whitespace-nowrap ${
-                    dateRange === '90d' ? 'text-[10px]' : ''
-                  }`}>
-                    {formatDateLabel(day.date)}
-                  </span>
-                )}
-                {!showLabel && <div className="h-4"></div>}
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
-};
-
-export default BalanceChart;
+}

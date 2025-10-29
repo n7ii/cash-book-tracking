@@ -1,508 +1,472 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Save, X, Calculator, Search, Upload } from 'lucide-react';
-import { useTransactions } from '../contexts/TransactionContext';
-import { Transaction } from '../types/Transaction';
-import { useTranslation } from 'react-i18next';
-import { useMarkets, MarketMember } from '../contexts/MarketContext';
-
-import { MOCK_USERS } from '../utils/mockUsers';
-
+import { useMarkets } from '../contexts/MarketContext';
+import { useNotifications } from '../contexts/NotificationContext';
+import { fetchMarketCustomers } from './Service/marketService';
 import {
-  loadActivities,
-  saveActivities,
-  ymd,
-} from '../utils/Activities';
+  adminAddFunds,
+  createCollectionWithStatus,
+  createExpense,
+  createLoanTx,
+  uploadSlip,
+} from './Service/transactionformService';
+
+type TxType = 'income' | 'expense';
+type Category = 'ທຶນ' | 'ງວດ-ດອກເບ້ຍ' | 'ອື່ນໆ';
+
+type MemberOption = { id: string; name: string };
+
+const toNumber = (v: any) => {
+  const n = Number(String(v ?? '').replace(/,/g, ''));
+  return Number.isFinite(n) ? n : 0;
+};
 
 type Props = {
-  defaultType?: Transaction['type'] | null;
+  defaultType?: TxType | null;     
+  defaultCategory?: Category | null; 
+  defaultMarketId?: string | null;
+  defaultMemberId?: string | null;
   onAfterSubmit?: () => void;
 };
 
-const TransactionForm: React.FC<Props> = ({ defaultType, onAfterSubmit }) => {
-  const { t } = useTranslation();
-  const { addTransaction } = useTransactions();
-  const { markets, listMembers } = useMarkets();
+const TransactionForm: React.FC<Props> = ({
+  defaultType,
+  defaultCategory,
+  defaultMarketId,
+  defaultMemberId,
+  onAfterSubmit,
+}) => {
+  const { markets } = useMarkets();
+  const { showError, showSuccess } = useNotifications();
 
-  // --- mainform ---
-  const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0],
-    type: 'expense' as Transaction['type'],
-    amount: '',
-    category: '',
-    paymentMethod: 'card' as Transaction['paymentMethod'],
-    notes: '',
-    marketId: '' as string,
-    collectorId: '' as string, // collector
-  });
+  const [type, setType] = useState<TxType>('income');
+  const incomeCats: Category[] = ['ທຶນ', 'ງວດ-ດອກເບ້ຍ', 'ອື່ນໆ'];
+  const expenseCats: Category[] = ['ທຶນ', 'ອື່ນໆ'];
+  const [category, setCategory] = useState<Category>('ງວດ-ດອກເບ້ຍ');
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [marketId, setMarketId] = useState<string>('');
+  const [members, setMembers] = useState<MemberOption[]>([]);
+  const [selectedMemberId, setSelectedMemberId] = useState<string>('');
 
-  // --- search ---
-  const [marketQuery, setMarketQuery] = useState('');
-  const [marketOpen, setMarketOpen] = useState(false);
+  const [method, setMethod] = useState<'cash' | 'transfer' | 'other'>('cash');
+  const [note, setNote] = useState('');
 
-  const filteredMarkets = useMemo(() => {
-    const q = marketQuery.trim().toLowerCase();
-    if (!q) return markets;
-    return markets.filter((m) => m.name.toLowerCase().includes(q) || m.id.toLowerCase().includes(q));
-  }, [marketQuery, markets]);
+  // ຕາຕະລາງເກັບງວດ
+  const [rowAmounts, setRowAmounts] = useState<Record<string, number>>({});
+  const [rowUnpaid, setRowUnpaid] = useState<Record<string, boolean>>({});
+  const [rowNotes, setRowNotes] = useState<Record<string, string>>({});
 
-  const pickMarket = (id: string) => {
-    const m = markets.find((x) => x.id === id);
-    if (!m) return;
-    setFormData((s) => ({ ...s, marketId: m.id }));
-    setMarketQuery(`${m.name} (ID: ${m.id})`);
-    setMarketOpen(false);
-  };
+  const [manualAmount, setManualAmount] = useState('');
+  const [slipUrl, setSlipUrl] = useState<string | null>(null);
+  const [slipUploading, setSlipUploading] = useState(false);
 
-  // --- listname members + checkbox “no pay” ---
-  const membersOfMarket: MarketMember[] = useMemo(
-    () => (formData.marketId ? listMembers(formData.marketId) : []),
-    [formData.marketId, listMembers]
+  const cats = type === 'income' ? incomeCats : expenseCats;
+  const needMarket = !(type === 'income' && category === 'ທຶນ');
+  const isInstallment = type === 'income' && category === 'ງວດ-ດອກເບ້ຍ';
+  const isLoanCreate = type === 'expense' && category === 'ທຶນ';
+
+  const totalFromRows = useMemo(
+    () => Object.values(rowAmounts).reduce((s, n) => s + (Number(n) || 0), 0),
+    [rowAmounts]
   );
-  const [nonPayers, setNonPayers] = useState<Set<string>>(new Set());
+  const amountDisabled = isInstallment;
+  const amount = useMemo(
+    () => (isInstallment ? totalFromRows : toNumber(manualAmount)),
+    [isInstallment, totalFromRows, manualAmount]
+  );
 
-  const toggleNonPayer = (memberId: string) => {
-    setNonPayers((prev) => {
-      const next = new Set(prev);
-      if (next.has(memberId)) next.delete(memberId);
-      else next.add(memberId);
-      return next;
-    });
-  };
+  const loadMembers = async (mid: string) => {
+    setMarketId(mid);
+    setMembers([]);
+    setSelectedMemberId('');
+    setRowAmounts({});
+    setRowUnpaid({});
+    setRowNotes({});
+    if (!mid) return;
 
-  // --- upload slip  ---
-  const [slipFile, setSlipFile] = useState<File | null>(null);
-  const [slipPreviewUrl, setSlipPreviewUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!slipFile) {
-      if (slipPreviewUrl) URL.revokeObjectURL(slipPreviewUrl);
-      setSlipPreviewUrl(null);
-      return;
+    try {
+      const res = await fetchMarketCustomers(Number(mid), 1, 200, '');
+      const raw = Array.isArray(res?.data?.data)
+        ? res.data.data
+        : Array.isArray(res?.data)
+        ? res.data
+        : [];
+      const list: MemberOption[] = raw.map((c: any) => ({
+        id: String(c.MID ?? c.id),
+        name: `${c.Fname ?? ''} ${c.Lname ?? ''}`.trim(),
+      }));
+      setMembers(list);
+    } catch (e) {
+      showError('ດຶງສະມາຊິກບໍ່ສຳເລັດ');
     }
-    const url = URL.createObjectURL(slipFile);
-    setSlipPreviewUrl(url);
-    return () => {
-      URL.revokeObjectURL(url);
-    };
-  }, [slipFile]);
-
-  // setting default type 
+  };
   useEffect(() => {
-    if (!defaultType) return;
-    setFormData((prev) => ({ ...prev, type: defaultType }));
-  }, [defaultType]);
+  // 1) tye-category
+  if (defaultType) setType(defaultType);
+  if (defaultCategory) setCategory(defaultCategory);
 
-  // --- category options ---
-  const CATEGORY_OPTIONS = [
-    { value: '', label: t('selectCategory') || 'ເລືອກຫມວດໝູ່' },
-    { value: 'capital', label: 'ທຶນ' },
-    { value: 'installment_interest', label: 'ງວດ-ດອກເບີຍ' },
-    { value: 'penalty', label: 'ຄ່າປັບ' },
-  ];
+  // 2) market + lead members
+  if (defaultMarketId) {
+    // load members and setMarketId
+    loadMembers(defaultMarketId);
+  }
 
-  // check validation
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
+  // 3) select default member (if provided)
+  if (defaultMemberId) {
+    setSelectedMemberId(defaultMemberId);
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [defaultType, defaultCategory, defaultMarketId, defaultMemberId]);
 
-    if (!formData.marketId) newErrors.market = t('validation.marketIsRequired') || 'ກະລຸນາເລືອກຕະຫຼາດ';
-    if (!formData.collectorId) newErrors.collector = 'ກະລຸນາເລືອກຜູ້ເກັບເງິນ';
-    if (!formData.amount || parseFloat(formData.amount) <= 0)
-      newErrors.amount = t('validation.amountMustBeGreaterThan0');
-    if (!formData.category) newErrors.category = t('validation.categoryIsRequired');
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const validate = (): string | null => {
+    if (type === 'income') {
+      if (category === 'ງວດ-ດອກເບ້ຍ') {
+        if (!marketId) return 'ກະລຸນາເລືອກຕະຫຼາດ';
+        if (members.length === 0) return 'ຕະຫຼາດນີ້ບໍ່ມີສະມາຊິກ';
+        if (amount <= 0) return 'ກະລຸນາກຳນົດຈຳນວນເງິນທີ່ເກັບ';
+        for (const id of Object.keys(rowUnpaid)) {
+          if (rowUnpaid[id] && !(rowNotes[id] || '').trim()) {
+            return 'ກະລຸນາລະບຸເຫດຜົນສຳລັບຜູ້ທີ່ບໍ່ຈ່າຍ';
+          }
+        }
+      } else if (category === 'ທຶນ') {
+        if (amount <= 0) return 'ກະລຸນາລະບຸຈຳນວນເງິນ';
+      } else if (category === 'ອື່ນໆ') {
+        return 'ປະເພດນີ້ຍັງບໍ່ຮອງຮັບ';
+      }
+    } else {
+      if (category === 'ທຶນ') {
+        if (!marketId) return 'ກະລຸນາເລືອກຕະຫຼາດ';
+        if (!selectedMemberId) return 'ກະລຸນາເລືອກສະມາຊິກ 1 ຄົນ';
+        if (amount <= 0) return 'ກະລຸນາລະບຸຈຳນວນເງິນ';
+      } else if (category === 'ອື່ນໆ') {
+        if (amount <= 0) return 'ກະລຸນາລະບຸຈຳນວນເງິນ';
+        if (!note.trim()) return 'ກະລຸນາລະບຸ Note ເມື່ອເລືອກ "ອື່ນໆ"';
+      }
+    }
+    return null;
   };
 
-  const categoryLabel = (val: string) => {
-    const f = CATEGORY_OPTIONS.find((x) => x.value === val);
-    return f?.label || val;
+  const handlePickSlip = async (file: File | null) => {
+    if (!file) return;
+    try {
+      setSlipUploading(true);
+      const url = await uploadSlip(file);
+      setSlipUrl(url || null);
+    } catch {
+      setSlipUrl(null);
+      showError('ອັບໂຫລດສະລິບບໍ່ສຳເລັດ');
+    } finally {
+      setSlipUploading(false);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+  const handleSubmit = async () => {
+    const err = validate();
+    if (err) return showError(err);
 
-    const tx: Transaction = {
-      ...(undefined as unknown as Transaction), 
-      date: formData.date,
-      type: formData.type,
-      description: '', 
-      amount: parseFloat(formData.amount),
-      category: formData.category, 
-      paymentMethod: formData.paymentMethod,
-      notes: formData.notes || undefined,
-      marketId: formData.marketId || undefined,
-    };
-    addTransaction(tx);
+    try {
+      if (type === 'income') {
+        if (category === 'ງວດ-ດອກເບ້ຍ') {
+          const items = Object.keys(rowAmounts)
+            .filter((id) => rowAmounts[id] > 0 || rowUnpaid[id])
+            .map((id) => ({
+              member_id: Number(id),
+              amount: rowAmounts[id] || 0,
+              unpaid: !!rowUnpaid[id],
+              note: rowNotes[id] || undefined,
+            }));
 
-    const list = loadActivities();
-    const ts = Date.now();
-    const id = `TX-${ts}`;
-    const market = markets.find((m) => m.id === formData.marketId);
-    const collector = MOCK_USERS.find((u) => u.id === formData.collectorId);
-    const nonPayerNames = membersOfMarket
-      .filter((m) => nonPayers.has(m.id))
-      .map((m) => `${m.firstName ?? ''} ${m.lastName ?? ''}`.trim())
-      .filter(Boolean);
+          await createCollectionWithStatus({
+            market_id: Number(marketId),
+            method,
+            note: note || undefined,
+            slip_url: slipUrl,
+            items,
+          });
+        } else if (category === 'ທຶນ') {
+          await adminAddFunds({
+            amount,
+            method,
+            note: note || undefined,
+            slip_url: slipUrl,
+          });
+        }
+      } else {
+        if (category === 'ທຶນ') {
+          await createLoanTx({
+            member_id: Number(selectedMemberId),
+            total: amount,
+            method,
+            note: note || undefined,
+            slip_url: slipUrl,
+          });
+        } else if (category === 'ອື່ນໆ') {
+          await createExpense({
+            market_id: marketId ? Number(marketId) : null,
+            amount: amount,
+            category: 'ອື່ນໆ',
+            method,
+            note, // required
+            slip_url: slipUrl || undefined,
+          });
+        }
+      }
 
-    const noteParts: string[] = [];
-    if (nonPayerNames.length) noteParts.push(`ບໍ່ໄດ້ຈ່າຍໃນມື້ນີ້: ${nonPayerNames.join(', ')}`);
-    if (formData.notes?.trim()) noteParts.push(`ໝາຍເຫດ: ${formData.notes.trim()}`);
-
-    list.unshift({
-      id,
-      date: formData.date || ymd(),
-      type: formData.type,
-      amount: parseFloat(formData.amount),
-      category: categoryLabel(formData.category),
-      marketId: formData.marketId,
-      marketName: market?.name,
-      paymentMethod: formData.paymentMethod,
-      userId: collector?.id || '',
-      userName: collector ? `${collector.firstName} ${collector.lastName}` : 'Unknown',
-      note: noteParts.join(' | ') || undefined,
-      slipUrl: slipPreviewUrl || undefined,
-    });
-    saveActivities(list);
-
-    // reset
-    setFormData({
-      date: new Date().toISOString().split('T')[0],
-      type: 'expense',
-      amount: '',
-      category: '',
-      paymentMethod: 'card',
-      notes: '',
-      marketId: '',
-      collectorId: '',
-    });
-    setMarketQuery('');
-    setMarketOpen(false);
-    setNonPayers(new Set());
-    setSlipFile(null);
-    setErrors({});
-
+      showSuccess('ເຮັດທຸລະກຳສຳເລັດ');
+      // reset ສະເພາະຈຳນວນຕາຕະລາງ
+      setManualAmount('');
+      setRowAmounts({});
+      setRowUnpaid({});
+      setRowNotes({});
+      setSelectedMemberId('');
+      setSlipUrl(null);
+    } catch (e: any) {
+      console.error(e);
+      showError(e?.response?.data?.message || 'ບັນທຶກທຸລະກຳລົ້ມເຫຼວ');
+    }
     onAfterSubmit?.();
   };
 
-  const resetForm = () => {
-    setFormData({
-      date: new Date().toISOString().split('T')[0],
-      type: 'expense',
-      amount: '',
-      category: '',
-      paymentMethod: 'card',
-      notes: '',
-      marketId: '',
-      collectorId: '',
-    });
-    setMarketQuery('');
-    setMarketOpen(false);
-    setNonPayers(new Set());
-    setSlipFile(null);
-    setErrors({});
-  };
-
+  /* ===================== UI===================== */
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Calculator className="h-6 w-6 text-blue-600" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">{t('addNewTransaction')}</h2>
-              <p className="text-gray-600">{t('enterYourTransactionDetailsBelow')}</p>
-            </div>
-          </div>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
+      <div className="flex items-center gap-3">
+        <div className="h-10 w-10 grid place-items-center rounded-lg bg-blue-50 text-blue-600 text-lg">🧾</div>
+        <div>
+          <h2 className="text-xl font-semibold">ເພີ່ມທຸລະກຳໃໝ່</h2>
+          <p className="text-gray-500 text-sm">ໃສ່ລາຍລະອຽດທຸລະກຳຕ່າງໆນີ້</p>
+        </div>
+      </div>
+
+      {/* topline: ປະເພດ / ໝວດໝູ່ / ວິທີຊຳລະ */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label className="text-sm text-gray-600">ປະເພດ</label>
+          <select
+            className="mt-1 border rounded-lg p-2 w-full"
+            value={type}
+            onChange={(e) => {
+              const v = e.target.value as TxType;
+              setType(v);
+              setCategory(v === 'income' ? 'ງວດ-ດອກເບ້ຍ' : 'ທຶນ');
+              setManualAmount('');
+              setSlipUrl(null);
+            }}
+          >
+            <option value="income">ລາຍຮັບ</option>
+            <option value="expense">ລາຍຈ່າຍ</option>
+          </select>
+          <p className="text-xs text-gray-500 mt-1">ເລືອກ “ລາຍຮັບ” ຫຼື “ລາຍຈ່າຍ”</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Date and Type */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">
-                {t('date')}
-              </label>
-              <input
-                type="date"
-                id="date"
-                value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
+        <div>
+          <label className="text-sm text-gray-600">ຫມວດໝູ່</label>
+          <select
+            className="mt-1 border rounded-lg p-2 w-full"
+            value={category}
+            onChange={(e) => {
+              setCategory(e.target.value as Category);
+              setManualAmount('');
+            }}
+          >
+            {cats.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+          <p className="text-xs text-gray-500 mt-1">“ລາຍຮັບ” ມີ “ທຶນ, ງວດ-ດອກເບ້ຍ, ອື່ນໆ” / “ລາຍຈ່າຍ” ບໍ່ມີ “ງວດ-ດອກເບ້ຍ”</p>
+        </div>
 
-            <div>
-              <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-2">
-                {t('transactionType')}
-              </label>
-              <select
-                id="type"
-                value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value as Transaction['type'] })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="income">{t('income')}</option>
-                <option value="expense">{t('expenses')}</option>
-                <option value="transfer">{t('transfer')}</option>
-              </select>
-            </div>
-          </div>
+        <div>
+          <label className="text-sm text-gray-600">ວິທີຊຳລະ</label>
+          <select
+            className="mt-1 border rounded-lg p-2 w-full"
+            value={method}
+            onChange={(e) => setMethod(e.target.value as any)}
+          >
+            <option value="cash">ເງິນສົດ</option>
+            <option value="transfer">ໂອນ</option>
+            <option value="other">ອື່ນໆ</option>
+          </select>
+          <p className="text-xs text-gray-500 mt-1">ເລືອກວິທີຮັບ-ຈ່າຍເງິນ</p>
+        </div>
+      </div>
 
-          {/* Market Autocomplete */}
-          <div className="relative">
-            <label htmlFor="market" className="block text-sm font-medium text-gray-700 mb-2">
-              {t('markets.title') /* "ຕະຫຼາດ" */}
-            </label>
-            <div className="relative">
-              <Search className="h-4 w-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                id="market"
-                type="text"
-                value={marketQuery}
-                onChange={(e) => {
-                  setMarketQuery(e.target.value);
-                  setMarketOpen(true);
-                  setFormData((s) => ({ ...s, marketId: '' }));
-                  setNonPayers(new Set());
-                }}
-                onFocus={() => setMarketOpen(true)}
-                placeholder={t('markets.searchByIdOrName') || 'Search market by ID or name'}
-                className={`w-full pl-9 pr-3 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.market ? 'border-red-500' : 'border-gray-300'
-                }`}
-              />
-            </div>
-            {errors.market && <p className="mt-1 text-sm text-red-600">{errors.market}</p>}
+      {/* ຕະຫຼາດ */}
+      {needMarket && (
+        <div>
+          <label className="text-sm text-gray-600">ຕະຫຼາດ</label>
+          <select
+            className="mt-1 border rounded-lg p-2 w-full md:w-96"
+            value={marketId}
+            onChange={(e) => loadMembers(e.target.value)}
+          >
+            <option value="">— ເລືອກຕະຫຼາດ —</option>
+            {markets.map((m) => (
+              <option key={m.id} value={m.id}>{m.name}</option>
+            ))}
+          </select>
+          <p className="text-xs text-gray-500 mt-1">ຄົ້ນຫາ/ເລືອກຕະຫຼາດເພື່ອດຶງລາຍຊື່ສະມາຊິກ</p>
+        </div>
+      )}
 
-            {marketOpen && (
-              <div
-                className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow"
-                onMouseLeave={() => setMarketOpen(false)}
-              >
-                {filteredMarkets.length === 0 ? (
-                  <div className="px-3 py-2 text-sm text-gray-500">{t('noResults') || 'No results'}</div>
-                ) : (
-                  filteredMarkets.slice(0, 8).map((m) => (
-                    <button
-                      key={m.id}
-                      type="button"
-                      className="w-full text-left px-3 py-2 hover:bg-gray-50"
-                      onClick={() => pickMarket(m.id)}
-                    >
-                      <div className="font-medium">{m.name}</div>
-                      <div className="text-xs text-gray-500">
-                        ID: {m.id} • {m.village}, {m.city}, {m.district}
-                      </div>
-                    </button>
-                  ))
+      {/* ຕາຕະລາງເກັບງວດ (ລາຍຮັບ/ງວດ-ດອກເບ້ຍ) */}
+      {isInstallment && (
+        <div>
+          <div className="text-sm font-medium text-gray-700 mb-2">ລາຍລະອຽດການເກັບ</div>
+          <div className="overflow-x-auto border rounded-lg">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b bg-gray-50">
+                <tr>
+                  <th className="p-2">ຊື່ສະມາຊິກ</th>
+                  <th className="p-2 w-40 text-right">ຈຳນວນ</th>
+                  <th className="p-2 w-24 text-center">ບໍ່ຈ່າຍ</th>
+                  <th className="p-2">ເຫດຜົນ (ຖ້າບໍ່ຈ່າຍ)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {members.map((m) => (
+                  <tr key={m.id} className="border-b">
+                    <td className="p-2">{m.name}</td>
+                    <td className="p-2">
+                      <input
+                        className="border rounded-lg p-1 w-full text-right"
+                        placeholder="0"
+                        value={rowAmounts[m.id] ?? ''}
+                        onChange={(e) =>
+                          setRowAmounts((prev) => ({ ...prev, [m.id]: toNumber(e.target.value) }))
+                        }
+                        disabled={rowUnpaid[m.id]}
+                      />
+                    </td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="checkbox"
+                        checked={!!rowUnpaid[m.id]}
+                        onChange={(e) =>
+                          setRowUnpaid((prev) => ({ ...prev, [m.id]: e.target.checked }))
+                        }
+                      />
+                    </td>
+                    <td className="p-2">
+                      <input
+                        className="border rounded-lg p-1 w-full"
+                        placeholder="ອະທິບາຍເຫດຜົນ (ຖ້າບໍ່ຈ່າຍ)"
+                        value={rowNotes[m.id] ?? ''}
+                        onChange={(e) =>
+                          setRowNotes((prev) => ({ ...prev, [m.id]: e.target.value }))
+                        }
+                        disabled={!rowUnpaid[m.id]}
+                      />
+                    </td>
+                  </tr>
+                ))}
+                {members.length === 0 && (
+                  <tr>
+                    <td className="p-4 text-center text-gray-500" colSpan={4}>ບໍ່ມີສະມາຊິກ</td>
+                  </tr>
                 )}
-              </div>
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">ລວມຈາກທຸກສະມາຊິກ: <b>{totalFromRows.toLocaleString()}</b></p>
+        </div>
+      )}
+
+      {/* ເລືອກສະມາຊິກ 1 ຄົນ (ລາຍຈ່າຍ/ທຶນ) */}
+      {isLoanCreate && (
+        <div>
+          <div className="text-sm font-medium text-gray-700 mb-2">ເລືອກສະມາຊິກ (ໄດ້ 1 ຄົນ)</div>
+          <div className="overflow-x-auto border rounded-lg">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b bg-gray-50">
+                <tr>
+                  <th className="p-2 w-20">ເລືອກ</th>
+                  <th className="p-2">ຊື່ສະມາຊິກ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {members.map((m) => {
+                  const disabled = !!selectedMemberId && selectedMemberId !== m.id;
+                  return (
+                    <tr key={m.id} className="border-b">
+                      <td className="p-2">
+                        <input
+                          type="radio"
+                          name="oneMember"
+                          checked={selectedMemberId === m.id}
+                          onChange={() => setSelectedMemberId(m.id)}
+                          disabled={disabled}
+                        />
+                      </td>
+                      <td className="p-2">{m.name}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">ໝາຍເຫດ: ສ້າງການກູ້ເງິນໄດ້ຄັ້ງລະ 1 ຄົນ</p>
+        </div>
+      )}
+
+      {/* Amount & Note */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="text-sm text-gray-600">Amount</label>
+          <input
+            className="mt-1 border rounded-lg p-2 w-full text-right"
+            placeholder="0"
+            value={amountDisabled ? amount.toLocaleString() : manualAmount}
+            onChange={(e) => setManualAmount(e.target.value)}
+            disabled={amountDisabled}
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            {amountDisabled ? 'ຄຳນວນອັດຕະໂນມັດຈາກຕາຕະລາງດ້ານເທິງ' : 'ພິມຈຳນວນເງິນທີ່ຕ້ອງການ'}
+          </p>
+        </div>
+        <div>
+          <label className="text-sm text-gray-600">Note</label>
+          <textarea
+            className="mt-1 border rounded-lg p-2 w-full"
+            rows={3}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="ອະທິບາຍ (ຖ້າມີ)"
+          />
+          <p className="text-xs text-gray-500 mt-1">ບັງຄັບສະເພາະເລືອກ “ອື່ນໆ”</p>
+        </div>
+      </div>
+
+      {/* ອັບໂຫລດສລິບເມື່ອເລືອກໂອນ */}
+      {method === 'transfer' && (
+        <div>
+          <label className="text-sm text-gray-600">ອັບໂຫລດສລິບເມື່ອເລືອກໂອນ (ຖ້າໂອນ)</label>
+          <div className="flex items-center gap-3 mt-1">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => handlePickSlip(e.target.files?.[0] ?? null)}
+              disabled={slipUploading}
+            />
+            {slipUploading && <span className="text-sm text-gray-500">Uploading…</span>}
+            {!!slipUrl && (
+              <a className="text-sm text-blue-600 underline" href={slipUrl} target="_blank" rel="noreferrer">
+                ເບິ່ງຮູບ
+              </a>
             )}
           </div>
+          <p className="text-xs text-gray-500 mt-1">ເພື່ອເກັບຫຼັກຖານການໂອນເງິນ</p>
+        </div>
+      )}
 
-          {/* Members checklist */}
-          {formData.marketId && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                ບໍ່ໄດ້ຈ່າຍໃນມື້ນີ້ (ຕິກທີ່ບັອກ “ບໍ່ໄດ້ຈ່າຍ”)
-              </label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {membersOfMarket.length === 0 ? (
-                  <div className="text-gray-500">ຕະຫຼາດນີ້ຍັງບໍ່ມີສະມາຊິກ</div>
-                ) : (
-                  membersOfMarket.map((m) => {
-                    const fullName = `${m.firstName ?? ''} ${m.lastName ?? ''}`.trim() || '(ບໍ່ລະບຸຊື່)';
-                    const checked = nonPayers.has(m.id);
-                    return (
-                      <label
-                        key={m.id}
-                        className={`flex items-center gap-2 p-2 border rounded-lg cursor-pointer ${
-                          checked ? 'bg-red-50 border-red-200' : 'hover:bg-gray-50'
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4"
-                          checked={checked}
-                          onChange={() => toggleNonPayer(m.id)}
-                        />
-                        <span className="text-sm">
-                          {fullName}
-                          {m.role === 'agent' ? <span className="ml-2 text-xs text-blue-600">(ແມ່ຄ່າຍ)</span> : null}
-                        </span>
-                      </label>
-                    );
-                  })
-                )}
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                * ເຫດຜົນໃຫ້ຂຽນທີ່ “ບົດບັນທຶກ” ດ້ານລຸ່ມ
-              </p>
-            </div>
-          )}
-
-          {/* Amount & Category */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-2">
-                {t('amountMt')}
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">₭</span>
-                </div>
-                <input
-                  type="number"
-                  id="amount"
-                  step="0.01"
-                  min="0"
-                  value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                  placeholder="0.00"
-                  className={`w-full pl-8 pr-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.amount ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                />
-              </div>
-              {errors.amount && <p className="mt-1 text-sm text-red-600">{errors.amount}</p>}
-            </div>
-
-            <div>
-              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
-                {t('categoryMt')}
-              </label>
-              <select
-                id="category"
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className={`w-full px-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.category ? 'border-red-500' : 'border-gray-300'
-                }`}
-              >
-                {CATEGORY_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              {errors.category && <p className="mt-1 text-sm text-red-600">{errors.category}</p>}
-            </div>
-          </div>
-
-          {/* Payment Method & Collector */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="paymentMethod" className="block text-sm font-medium text-gray-700 mb-2">
-                {t('paymentMethod')}
-              </label>
-              <select
-                id="paymentMethod"
-                value={formData.paymentMethod}
-                onChange={(e) =>
-                  setFormData({ ...formData, paymentMethod: e.target.value as Transaction['paymentMethod'] })
-                }
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="cash">{t('paymentMethodList.cash')}</option>
-                <option value="card">{t('paymentMethodList.card')}</option>
-                <option value="bank_transfer">{t('paymentMethodList.bankTransfer')}</option>
-                <option value="check">{t('paymentMethodList.check')}</option>
-                <option value="other">{t('paymentMethodList.other')}</option>
-              </select>
-
-              {/* upload slip */}
-              {formData.paymentMethod === 'bank_transfer' && (
-                <div className="mt-3">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">slip</label>
-                  <div className="flex items-center gap-3">
-                    <label className="inline-flex items-center px-3 py-2 border rounded-lg cursor-pointer hover:bg-gray-50">
-                      <Upload className="h-4 w-4 mr-2" />
-                      <span>upload</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => setSlipFile(e.target.files?.[0] || null)}
-                      />
-                    </label>
-                    {slipPreviewUrl && (
-                      <a
-                        href={slipPreviewUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-blue-600 text-sm underline"
-                      >
-                        see the picture
-                      </a>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="collector" className="block text-sm font-medium text-gray-700 mb-2">
-                ຜູ້ເກັບເງິນ
-              </label>
-              <select
-                id="collector"
-                value={formData.collectorId}
-                onChange={(e) => setFormData({ ...formData, collectorId: e.target.value })}
-                className={`w-full px-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.collector ? 'border-red-500' : 'border-gray-300'
-                }`}
-              >
-                <option value="">— ລະບຸຜູ້ເກັບເງິນ —</option>
-                {MOCK_USERS.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.firstName} {u.lastName} ({u.role})
-                  </option>
-                ))}
-              </select>
-              {errors.collector && <p className="mt-1 text-sm text-red-600">{errors.collector}</p>}
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div>
-            <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-              {t('notes')}
-            </label>
-            <textarea
-              id="notes"
-              rows={3}
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              placeholder="ຂຽນເຫດຜົນຂອງຜູ້ທີ່ບໍ່ໄດ້ຈ່າຍມື້ນີ້ ຫຼື ລາຍລະອຽດເພີ່ມເຕີມ"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={resetForm}
-              className="flex items-center px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors duration-200"
-            >
-              <X className="h-4 w-4 mr-2" />
-              {t('clear')}
-            </button>
-            <button
-              type="submit"
-              className="flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {t('addTransaction')}
-            </button>
-          </div>
-        </form>
+      <div className="flex justify-end">
+        <button
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          onClick={handleSubmit}
+          disabled={type === 'income' && category === 'ອື່ນໆ'}
+        >
+          ບັນທຶກ
+        </button>
       </div>
     </div>
   );

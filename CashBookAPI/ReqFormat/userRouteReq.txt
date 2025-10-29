@@ -15,7 +15,6 @@ final body = jsonEncode({
 
 
 
-
 ## Register:
 
 *POST /api/users/register
@@ -26,15 +25,13 @@ final headers = {
 
 final body = jsonEncode({
       {
-  "Fname": "Vanh",
-  "Lname": "Chantha",
-  "username": "vanh.c",
-  "password": "aStrongPassword123",
-  "phone": "0209876543",
-  "birth_date": "1998-11-30",
-  "gender": "Male",
+  "Fname": "Some",
+  "Lname": "NewEmployee",
+  "username": "s.newemployee",
+  "password": "a_strong_password",
+  "phone": "02098765432",
+  "Email": "s.newemployee@example.com",
   "address": 1,
-  "role_id": 2,
-  "is_active": 1
+  "role_id": 4
 }
     });

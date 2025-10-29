@@ -1,0 +1,7 @@
+## get address: 
+
+*GET /api/admin/addresses/search?village=Phon&district=Say
+
+final headers = {
+  'Authorization': 'Bearer $token',   // Needed to prove who the user is
+};

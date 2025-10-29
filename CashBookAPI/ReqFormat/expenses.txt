@@ -1,6 +1,6 @@
 ## get Expense: 
 
-*GET /api/expenses
+*GET /api/expenses?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&page=1&search=fuel
 
 final headers = {
   'Authorization': 'Bearer $token',   // Needed to prove who the user is
@@ -33,10 +33,13 @@ final headers = {
 
 final body = jsonEncode({
     {
-  "expense_type": "Fuel",
-  "amount": 25000,
-  "photo_url": null,
-  "notes": "Fuel for motorbike for market visits."
+    "expense_type": "Fuel",
+    "amount": 30000,
+    "notes": "Filled up the tank for market visits.",
+    "photo_url": null,
+    "category": "Transportation",         
+    "payment_method": "Cash",             
+    "market_id": 2     
 }
     });
 
@@ -55,9 +58,13 @@ final headers = {
 
 final body = jsonEncode({
     {
-  "amount": 30000,
-  "notes": "Updated fuel amount.",
-  "edit_reason": "Made a mistake on the initial entry."
+    "expense_type": "Fuel",
+    "amount": 35000,
+    "notes": "Corrected amount from receipt.",
+    "category": "Transportation",         // NEW
+    "payment_method": "Cash",             // NEW
+    "market_id": 2,                       // NEW
+    "edit_reason": "Typo in the original amount."
 }
     });
 

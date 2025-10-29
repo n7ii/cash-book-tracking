@@ -8,4 +8,6 @@ export type ViewKey =
   | 'market-detail'
   | 'manage-users'
   | 'user-activity'
-  | 'activity-detail';
+  | 'loan-detail'
+  | 'activity-detail'
+  | 'transaction-detail';

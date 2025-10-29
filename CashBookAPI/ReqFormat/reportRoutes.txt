@@ -1,7 +1,53 @@
 ## get balance: 
 
-*GET /api/admin/reports/balance
+*GET api/admin/reports/balance?startDate=2025-10-01&endDate=2025-10-01
 
 final headers = {
   'Content-Type': 'application/json', 
 };
+
+
+
+
+
+## get useractivity: 
+
+*GET api/admin/reports/useractivity?startDate=2025-10-01&endDate=2025-10-01&search=Sokdee
+
+final headers = {
+  'Content-Type': 'application/json', 
+};
+
+
+
+
+
+## get lastest reconcile: 
+
+*GET api/admin/reports/reconciliations/latest
+
+final headers = {
+  'Content-Type': 'application/json', 
+};
+
+
+
+
+
+
+## post reconcile: 
+
+*POST api/admin/reports/reconciliations
+
+final headers = {
+  'Content-Type': 'application/json', 
+  'Authorization': 'Bearer $token', 
+};
+
+final body = jsonEncode({
+    {
+    "statement_date": "2025-10-31",
+    "system_balance": 15250000.00,
+    "bank_balance": 15250000.00
+}
+    });
