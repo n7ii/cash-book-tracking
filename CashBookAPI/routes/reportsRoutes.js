@@ -189,37 +189,43 @@ router.get('/useractivity', authMiddleware, adminMiddleware, async (req, res, ne
     // --- Detailed Transaction List (Logic is now split for counting and fetching) ---
     const baseQuery = `
        FROM (
+          -- Income Records (MODIFIED PART) --
           SELECT
             i.IID as id,
             DATE_FORMAT(CONVERT_TZ(i.created_at, @@session.time_zone, '+00:00'), '%Y-%m-%dT%TZ') AS date,
             'income' AS type, i.notes AS description, i.total AS amount,
             u.Fname AS employee_name, mk.Mname AS market_name,
-            COALESCE(m.Fname, 'SYSTEM') AS collector_name
+            -- Find Collector based on market_id and role_id = 3
+            collector.Fname AS collector_name
           FROM tbincome i
           JOIN tbuser u ON i.user_id = u.UID
-          LEFT JOIN tbmember m ON i.member_id = m.MID
+          -- REMOVED: LEFT JOIN tbmember m ON i.member_id = m.MID
           LEFT JOIN tbmarkets mk ON i.market_id = mk.MkID
+          -- ADDED: LEFT JOIN to find the collector
+          LEFT JOIN tbmember AS collector ON i.market_id = collector.market_id AND collector.role_id = 3
 
           UNION ALL
 
+          -- Expense Records (No change needed here) --
           SELECT
             e.EID as id,
             DATE_FORMAT(CONVERT_TZ(e.created_at, @@session.time_zone, '+00:00'), '%Y-%m-%dT%TZ') AS date,
             'expense' AS type, e.expense_type AS description, e.amount,
             u.Fname AS employee_name, mk.Mname AS market_name,
-            NULL AS collector_name
+            NULL AS collector_name -- Expenses don't have a collector in this context
           FROM tbexpenses e
           JOIN tbuser u ON e.user_id = u.UID
           LEFT JOIN tbmarkets mk ON e.market_id = mk.MkID
 
           UNION ALL
 
+          -- Loan Disbursement Records (No change needed here, collector_name is customer) --
           SELECT
             l.LID as id,
             DATE_FORMAT(CONVERT_TZ(l.start_date, @@session.time_zone, '+00:00'), '%Y-%m-%dT%TZ') AS date,
             'loan' AS type, CONCAT('Loan to ', m.Fname, ' ', m.Lname) AS description,
             l.total as amount, u.Fname as employee_name, mk.Mname as market_name,
-            m.Fname as collector_name
+            m.Fname as collector_name -- For loans, 'collector_name' is actually the customer
           FROM tbloans l
           JOIN tbuser u ON l.created_by = u.UID
           JOIN tbmember m ON l.member_id = m.MID

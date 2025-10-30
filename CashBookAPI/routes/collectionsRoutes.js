@@ -170,12 +170,15 @@ router.get('/:id', authMiddleware, async (req, res, next) => {
             i.IID, i.member_id, i.user_id, i.total, i.photo_url, i.notes, i.market_id, i.type, i.category, i.payment_method,
             DATE_FORMAT(CONVERT_TZ(i.created_at, @@session.time_zone, '+00:00'), '%Y-%m-%dT%TZ') AS created_at,
             u.Fname AS employee_fname, u.Lname AS employee_lname,
-            m.Fname AS collector_fname, m.Lname AS collector_lname,
+            -- Find Collector based on market_id and role_id = 3
+            collector.Fname AS collector_fname, collector.Lname AS collector_lname,
             mk.Mname AS market_name
         FROM tbincome AS i
         JOIN tbuser AS u ON i.user_id = u.UID
-        LEFT JOIN tbmember AS m ON i.member_id = m.MID
+        -- REMOVED: LEFT JOIN tbmember AS m ON i.member_id = m.MID
         LEFT JOIN tbmarkets AS mk ON i.market_id = mk.MkID
+        -- ADDED: LEFT JOIN to find the collector (member with role_id 3 in the same market)
+        LEFT JOIN tbmember AS collector ON i.market_id = collector.market_id AND collector.role_id = 3
         WHERE i.IID = ?`;
     
     const values = [collectionId];

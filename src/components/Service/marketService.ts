@@ -134,3 +134,20 @@ export async function fetchActiveLoansByMember(
   // ถ้า backend คุณใช้ path อื่น ให้ปรับตรงนี้
   return api.get(`/customers/${memberId}/active-loan`);
 }
+
+export const updateMarketAssignment = async (marketId: number | string, employeeId: number | null): Promise<any> => {
+  // Ensure marketId is a number if it comes as a string
+  const marketIdNum = typeof marketId === 'string' ? parseInt(marketId, 10) : marketId;
+  if (isNaN(marketIdNum)) {
+      throw new Error("Invalid Market ID provided for assignment update.");
+  }
+
+  // The payload contains the new employee ID (or null)
+  const payload = {
+      employee_id: employeeId // Send the ID or null
+  };
+
+  // Call the admin PUT route
+  const res = await api.put(`/admin/assignments/market/${marketIdNum}`, payload);
+  return res.data;
+};

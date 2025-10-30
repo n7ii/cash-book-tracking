@@ -31,7 +31,8 @@ function App() {
   const [currentView, setCurrentView] = useState<ViewKey>('dashboard');
   const [previousView, setPreviousView] = useState<ViewKey>('dashboard');
 
-  const [presetTxType, setPresetTxType] = useState<TxType | null>(null);
+  const [presetTxType, setPresetTxType] = useState<'income' | 'expense' | null>(null);
+  const [presetMethod, setPresetMethod] = useState<'cash' | 'transfer' | 'other' | null>(null);
   const [selectedMarketId, setSelectedMarketId] = useState<string | null>(null);
    const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
    const [selectedLoanId, setSelectedLoanId] = useState<string | null>(null);
@@ -62,10 +63,9 @@ function App() {
     // Loan clicks are handled by handleOpenLoanDetail
   };
 
-   const handleLoginSuccess = (newToken: string) => {   //Login
-    // --- UPDATE THIS PART ---
-    const roleId = parseInt(sessionStorage.getItem('userRole') || '0', 10);
-    setToken(newToken);   //Login
+   const handleLoginSuccess = (newToken: string, roleId: number) => {   //Login
+    setToken(newToken);
+    setUserRole(roleId); // Set state directly from the passed value
     setCurrentView('dashboard');   //Login
    };   //Login
    if (!token){   //Login
@@ -79,11 +79,16 @@ function App() {
     setCurrentView('loan-detail'); // This is a new view name
   };
 
-  const handleQuickAdd = (type: TxType) => {
-    setPresetTxType(type);
-    setPreviousView(currentView);
-    setCurrentView('add-transaction');
-  };
+  const handleQuickAdd = (kind: 'income' | 'expense' | 'transfer') => {
+  if (kind === 'transfer') {
+    setPresetTxType('income');
+    setPresetMethod('transfer');
+  } else {
+    setPresetTxType(kind);         // 'income' or 'expense'
+    setPresetMethod('cash');       //normal set to cash
+  }
+  setCurrentView('add-transaction');
+};
 
   const handleViewChange = (view: ViewKey) => {
   setPresetTxType(null);
@@ -127,20 +132,21 @@ const handleViewAll = () => {
     switch (currentView) {
       case 'dashboard':
         return <Dashboard onQuickAdd={handleQuickAdd}
-        onViewAll={handleViewAll}
+        onViewAll={() => setCurrentView('history')}
          />;
 
       case 'add-transaction':
         return (
           <TransactionForm
             defaultType={presetTxType?? 'income'}
-            defaultCategory={'ທຶນ'}             
+            defaultCategory={presetTxType === 'expense' ? 'ທຶນ' : 'ງວດ-ດອກເບ້ຍ'} 
+            defaultMethod={presetMethod ?? null}        
             defaultMarketId={presetMarketId ?? ''} 
             defaultMemberId={presetMemberId ?? ''}  
             onAfterSubmit={() => {
               setPresetTxType(null);
               setPresetMarketId(null);              // <— reset
-        setPresetMemberId(null); 
+              setPresetMemberId(null); 
               setCurrentView('dashboard');
             }}
           />
@@ -179,6 +185,7 @@ const handleViewAll = () => {
               setPresetMemberId(memberId);         
               setCurrentView('add-transaction');   
       }}
+      onViewAllHistory={handleViewAll} 
           />
         ) : (
           <Markets

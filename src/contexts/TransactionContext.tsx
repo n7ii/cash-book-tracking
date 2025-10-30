@@ -1,6 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, Dispatch, SetStateAction } from 'react';
-import axios from 'axios';
 import { Transaction } from '../types/Transaction';
+import {
+  fetchTransactionsFromApi,
+  fetchFilterOptionsFromApi,
+  TransactionApiResponse, // Optional: if you want to use the type here
+  FilterOptionsResponse // Optional: if you want to use the type here
+} from '../components/Service/transactionContextService'; // Adjust path if needed
 
 interface ApiResponse {
   total: number;
@@ -71,10 +76,9 @@ export const TransactionProvider: React.FC<{ children: ReactNode }> = ({ childre
         const token = sessionStorage.getItem('authToken');
         if (!token) return;
         try {
-            const response = await axios.get('http://localhost:3000/api/transactions/filters', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            setFilterOptions(response.data);
+                // --- CALL the service function ---
+                    const options = await fetchFilterOptionsFromApi();
+                    setFilterOptions(options);
         } catch (error) {
             console.error("Failed to fetch filter options", error);
         }
@@ -91,26 +95,27 @@ export const TransactionProvider: React.FC<{ children: ReactNode }> = ({ childre
     }
 
     try {
-      const response = await axios.get<ApiResponse>('http://localhost:3000/api/transactions', {
-        headers: { 'Authorization': `Bearer ${token}` },
-        params: {
+      const params = {
           page: currentPage,
           limit,
-          search: searchTerm,
-          type: filterType === 'all' ? '' : filterType,
-          category: filterCategory,
+          searchTerm,
+          filterType,
+          filterCategory,
           sortBy,
           sortOrder,
           startDate: dateRange.start,
           endDate: dateRange.end,     
-        },
-      });
+        };
 
-      setTransactions(response.data.data);
-      setTotalTransactions(response.data.total);
-      setTotalPages(Math.ceil(response.data.total / limit));
+      const responseData = await fetchTransactionsFromApi(params);
+            setTransactions(responseData.data);
+            setTotalTransactions(responseData.total);
+            setTotalPages(Math.ceil(responseData.total / limit));
     } catch (error) {
       console.error("Failed to fetch transactions:", error);
+      setTransactions([]); // Clear data on error
+      setTotalTransactions(0);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }

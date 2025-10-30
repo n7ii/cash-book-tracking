@@ -18,11 +18,22 @@ interface Props {
 }
 
 const ActivityDetail: React.FC<Props> = ({ txId, onBack }) => {
-  // Create "state" (memory) for our two lists, loading status, and errors
+  // Create "state" (memory) for our two lists, loading status, and errors ====== main State =======
   const [summary, setSummary] = useState<CollectionSummary | null>(null);
   const [subDetails, setSubDetails] = useState<IncomeSubDetail[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Preview state and handlers for image preview
+const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
+const openPreview = (url?: string | null) => url ? setPreviewUrl(url) : null;
+const closePreview = () => setPreviewUrl(null);
+
+React.useEffect(() => {
+  const onKey = (e: KeyboardEvent) => e.key === 'Escape' && closePreview();
+  window.addEventListener('keydown', onKey);
+  return () => window.removeEventListener('keydown', onKey);
+}, []);
+//---------------------------------------------------------------------
 
   // Use useEffect to fetch data from the API when the component first loads
   useEffect(() => {
@@ -113,9 +124,9 @@ const ActivityDetail: React.FC<Props> = ({ txId, onBack }) => {
                 <p className="font-medium text-gray-500">Collection Date</p>
                 <p className="text-gray-800 text-base">{formatToLaosTime(summary.created_at)}</p>
             </div>
-            {/* Collector */}
+            {/* Agent */}
             <div className="md:col-span-1">
-                <p className="font-medium text-gray-500">Collector / Source</p>
+                <p className="font-medium text-gray-500">Agent</p>
                 <p className="text-gray-800 text-base">{summary.collector_fname} {summary.collector_lname}</p>
             </div>
             {/* Market */}
@@ -133,15 +144,55 @@ const ActivityDetail: React.FC<Props> = ({ txId, onBack }) => {
         {summary.photo_url && (
             <div>
                 <p className="font-medium text-gray-500 mb-2">Attached Photo</p>
-                <img src={summary.photo_url} alt="Collection" className="max-w-xs rounded-lg border" />
+    {/* full image */}
+    <button
+      type="button"
+      onClick={() => openPreview(summary.photo_url!)}
+      className="inline-block rounded-lg border hover:shadow focus:outline-none focus:ring-2 focus:ring-blue-500"
+      title="Click to preview"
+    >
+      <img
+        src={summary.photo_url}
+        alt="Collection"
+        className="max-w-xs rounded-lg"
+      />
+    </button>
             </div>
         )}
     </div>
 )}
+{previewUrl && (
+  <div
+    className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+    onClick={closePreview}
+  >
+    <div
+      className="relative max-w-5xl w-[92%] md:w-auto"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <img
+        src={previewUrl}
+        alt="Preview"
+        className="max-h-[80vh] rounded-lg shadow-lg"
+      />
+      <button
+        type="button"
+        onClick={closePreview}
+        className="absolute -top-3 -right-3 bg-white text-gray-700 rounded-full p-2 shadow hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        aria-label="Close preview"
+        title="Close"
+      >
+        ✕
+      </button>
+    </div>
+  </div>
+)}
 
-      {/* Unpaid Customers Table */}
+
+      {/* Sub-Details Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-        <h2 className="p-4 text-lg font-semibold border-b text-red-700">ລາຍຊື່ລູກຄ້າທີ່ຄ້າງຈ່າຍ ({subDetails.length})</h2>
+        {/* --- CORRECTED TITLE --- */}
+        <h2 className="p-4 text-lg font-semibold border-b text-red-800">ລາຍລະອຽດການເກັບ({subDetails.length})</h2>
         <table className="w-full text-left">
           <thead>
             <tr className="text-gray-700">
@@ -160,6 +211,7 @@ const ActivityDetail: React.FC<Props> = ({ txId, onBack }) => {
                         {formatCurrency(detail.amount)}
                     </td>
                     <td className="px-3 py-2">
+                      {/* Status badge */}
                       <span className={`${detail.status === 'PAID' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} text-xs font-medium me-2 px-2.5 py-0.5 rounded`}>
                         {detail.status}
                       </span>
@@ -167,7 +219,11 @@ const ActivityDetail: React.FC<Props> = ({ txId, onBack }) => {
                     <td className="px-3 py-2 text-sm text-gray-600">{detail.notes || '-'}</td>
                   </tr>
             )) : (
-              <tr><td colSpan={2} className="p-6 text-center text-gray-500">ບໍ່ມີລູກຄ້າທີ່ຄ້າງຈ່າຍ</td></tr>
+              <tr>
+                 {/* --- CORRECTED EMPTY MESSAGE --- */}
+                 <td colSpan={4} className="p-6 text-center text-gray-500">ບໍ່ມີລາຍລະອຽດການເກັບ</td>
+                 {/* ----------------------------- */}
+              </tr>
             )}
           </tbody>
         </table>
