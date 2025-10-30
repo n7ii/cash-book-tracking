@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { Market, mapMarketFromApi } from '../types/Market';
+import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
+import { Market, mapMarketFromApi, MarketApiResponse } from '../types/Market';
 import {
   fetchMarkets,
   createMarket,
@@ -9,11 +9,15 @@ import {
   createCustomer,
   updateCustomer,
   deleteCustomer,
-} from '../components/Service/marketService'; 
+  updateMarketAssignment,
+} from '../components/Service/marketService';
+import { useNotifications } from '../contexts/NotificationContext';
+import axios, { isAxiosError } from 'axios';
 
 function getAddressIdFromMarket(m: any): number {
   return Number(m?.addressId ?? m?.Address ?? m?.villageId ?? m?.village ?? 0) || 0;
 }
+// Types remain mostly the same
 export type MarketMember = {
   id: string;
   firstName: string;
@@ -25,53 +29,55 @@ export type MarketMember = {
 };
 type NewMarketInput = { name: string; village: string };
 
+// Context type definition
 type MarketCtx = {
   markets: Market[];
-  addMarket: (m: NewMarketInput) => void;
+  loading: boolean; // Add loading state to context type
+  addMarket: (m: NewMarketInput) => Promise<void>; // Make async
   getMarket: (id: string) => Market | undefined;
   listMembers: (marketId: string) => MarketMember[];
   getAgents: (marketId: string) => MarketMember[];
-  addMember: (marketId: string, m: Omit<MarketMember, 'id'>) => void;
-  updateMember: (marketId: string, id: string, patch: Partial<MarketMember>) => void;
-  removeMember: (marketId: string, id: string) => void;
+  addMember: (marketId: string, m: Omit<MarketMember, 'id'>) => Promise<void>;
+  updateMember: (marketId: string, id: string, patch: Partial<MarketMember>) => Promise<void>;
+  removeMember: (marketId: string, id: string) => Promise<void>;
   getResponsible: (marketId: string) => string | null;
-  setResponsible: (marketId: string, userId: string | null) => void;
-  removeMarket: (marketId: string) => void;
+  setResponsible: (marketId: string, userId: string | null) => Promise<void>;
+  removeMarket: (marketId: string) => Promise<void>;
   editMarket: (marketId: string, patch: { name: string; villageId: number }, reason: string) => Promise<void>;
 };
 
 const MarketContext = createContext<MarketCtx | null>(null);
 
-export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const MarketProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [markets, setMarkets] = useState<Market[]>([]);
   const [membersByMarket, setMembersByMarket] = useState<Record<string, MarketMember[]>>({});
   const [responsibleByMarket, setResponsibleByMarket] = useState<Record<string, string | null>>({});
   const [loading, setLoading] = useState(true);
+  const { showSuccess, showError } = useNotifications();
 
   // load market component mount
   useEffect(() => {
     const loadMarkets = async () => {
+      setLoading(true);
       try {
         const response = await fetchMarkets(1, 100, '');
         // ✅ read array of response.data.data
-        const apiMarkets = Array.isArray(response?.data?.data)
-          ? response.data.data
-          : Array.isArray(response?.data)
-          ? response.data
-          : [];
+        const apiMarkets : MarketApiResponse[] = response?.data || []; 
         // use mapMarketFromApi for change
         const mappedMarkets: Market[] = apiMarkets.map(mapMarketFromApi);
         setMarkets(mappedMarkets);
 
-        // set map member and responsible(employee)
-        const membersMap: Record<string, MarketMember[]> = {};
         const respMap: Record<string, string | null> = {};
         mappedMarkets.forEach((m) => {
-          membersMap[m.id] = [];
           respMap[m.id] = m.responsible_by ? String(m.responsible_by) : null;
         });
-        setMembersByMarket(membersMap);
         setResponsibleByMarket(respMap);
+
+        // Initialize membersMap (can be empty initially, loaded later or per market)
+                const membersMap: Record<string, MarketMember[]> = {};
+                mappedMarkets.forEach((m) => { membersMap[m.id] = []; }); // Init empty
+                setMembersByMarket(membersMap);
+
       } catch (err) {
         console.error('Error loading markets:', err);
       } finally {
@@ -81,23 +87,44 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     loadMarkets();
   }, []);
 
+  // --- Refresh markets function (useful after add/edit/delete) ---
+     const refreshMarkets = async () => {
+          setLoading(true); // Indicate loading during refresh
+          try {
+              const response = await fetchMarkets(1, 100, '');
+              const apiMarkets: MarketApiResponse[] = response?.data || [];
+              const mappedMarkets: Market[] = apiMarkets.map(mapMarketFromApi);
+              setMarkets(mappedMarkets);
+  
+              // Re-populate the responsible map based on the refreshed market data
+              const respMap: Record<string, string | null> = {};
+              mappedMarkets.forEach((m) => {
+                  respMap[m.id] = m.responsible_by ? String(m.responsible_by) : null;
+              });
+              setResponsibleByMarket(respMap);
+  
+              // Keep existing members data or re-initialize if needed
+              const currentMembers = membersByMarket;
+              const membersMap: Record<string, MarketMember[]> = {};
+              mappedMarkets.forEach((m) => { membersMap[m.id] = currentMembers[m.id] || []; });
+              setMembersByMarket(membersMap);
+  
+          } catch (err) {
+              console.error('Error refreshing markets:', err);
+          } finally {
+              setLoading(false);
+          }
+      };
+
+
   // create market
   const addMarket: MarketCtx['addMarket'] = async (payload) => {
     try {
       await createMarket({
         Mname: payload.name,
         Address: Number(payload.village) || 0,
-        responsible_by: undefined,
       });
-      // load markets again
-      const response = await fetchMarkets(1, 100, '');
-      const apiMarkets = Array.isArray(response?.data?.data)
-        ? response.data.data
-        : Array.isArray(response?.data)
-        ? response.data
-        : [];
-      const mappedMarkets: Market[] = apiMarkets.map(mapMarketFromApi);
-      setMarkets(mappedMarkets);
+      await refreshMarkets();
     } catch (err) {
       console.error('Failed to create market:', err);
     }
@@ -117,11 +144,7 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       });
       // load new member
       const res = await fetchMarketCustomers(Number(marketId), 1, 100, '');
-      const customers = Array.isArray(res?.data?.data)
-        ? res.data.data
-        : Array.isArray(res?.data)
-        ? res.data
-        : [];
+      const customers = res?.data || [];
       const transformedMembers: MarketMember[] = customers.map((c: any) => ({
         id: String(c.MID || c.id),
         firstName: c.Fname || c.firstName || '',
@@ -134,6 +157,7 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setMembersByMarket((prev) => ({ ...prev, [marketId]: transformedMembers }));
     } catch (err) {
       console.error('Failed to add member:', err);
+      throw err;
     }
   };
 
@@ -154,11 +178,7 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       // reload members list of this market
       const res = await fetchMarketCustomers(Number(marketId), 1, 100, '');
-      const customers = Array.isArray(res?.data?.data)
-        ? res.data.data
-        : Array.isArray(res?.data)
-        ? res.data
-        : [];
+      const customers = res?.data || [];
       const transformed: MarketMember[] = customers.map((c: any) => ({
         id: String(c.MID || c.id),
         firstName: c.Fname || c.firstName || '',
@@ -180,11 +200,7 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       await deleteCustomer(Number(id), 'remove member');
       const res = await fetchMarketCustomers(Number(marketId), 1, 100, '');
-      const customers = Array.isArray(res?.data?.data)
-        ? res.data.data
-        : Array.isArray(res?.data)
-        ? res.data
-        : [];
+      const customers = res?.data || [];
       const transformedMembers: MarketMember[] = customers.map((c: any) => ({
         id: String(c.MID || c.id),
         firstName: c.Fname || c.firstName || '',
@@ -196,6 +212,7 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setMembersByMarket((prev) => ({ ...prev, [marketId]: transformedMembers }));
     } catch (err) {
       console.error('Failed to delete member:', err);
+      throw err;
     }
   };
 
@@ -204,19 +221,60 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     responsibleByMarket[marketId] ?? null;
 
   // set responsible
-  const setResponsible: MarketCtx['setResponsible'] = async (marketId, userId) => {
-    setResponsibleByMarket((prev) => ({ ...prev, [marketId]: userId }));
-    try {
-      const market = markets.find((m) => m.id === marketId);
-      if (!market) return;
-      await updateMarket(Number(marketId), {
-        Mname: market.name,
-        Address: getAddressIdFromMarket(market),
-        responsible_by: userId ? Number(userId) : undefined,
-        edit_reason: 'change responsible',
-      });
+  const setResponsible: MarketCtx['setResponsible'] = async (marketId, newUserIdString) => {
+    const marketIdNum = Number(marketId);
+        const newUserIdNum = newUserIdString ? Number(newUserIdString) : null;
+        const oldUserIdString = responsibleByMarket[marketId] ?? null;
+        const oldUserIdNum = oldUserIdString ? Number(oldUserIdString) : null;
+    
+        console.log(`--- setResponsible called ---`);
+        console.log(`Market ID: ${marketIdNum}`);
+        console.log(`Old User ID (from state): ${oldUserIdNum}`);
+        console.log(`New User ID (from dropdown): ${newUserIdNum}`);
+    
+        if (oldUserIdNum === newUserIdNum) {
+          console.log("No change in responsible user.");
+          return; // No change needed
+        }
+    
+        // Optimistically update the UI state first
+        setResponsibleByMarket((prevMap) => ({ ...prevMap, [marketId]: newUserIdString }));
+        console.log(`Optimistically set responsible for ${marketId} to ${newUserIdString}`);
+    
+        try {
+    
+          // --- Call the single PUT API endpoint ---
+          console.log(`Calling API to update assignment for Market ${marketIdNum} to User ${newUserIdNum}`);
+          await updateMarketAssignment(marketIdNum, newUserIdNum); // Uses the PUT request
+          // ----------------------------------------
+    
+          console.log(`Successfully updated assignment for market ${marketIdNum} via API.`);
+          // Optional: show success toast
+          showSuccess('Market assignment updated successfully!');
     } catch (err) {
       console.error('Failed to update market responsible:', err);
+      // Rollback the UI state on error
+            setResponsibleByMarket((prevMap) => ({ ...prevMap, [marketId]: oldUserIdString }));
+            console.log(`Rolled back UI state for market ${marketId} to ${oldUserIdString}`);
+      
+            let errorMsg = 'Failed to update assignment.'; // Default message
+        if (isAxiosError(err)) {
+            // If it's an Axios error, we know 'err.response' might exist
+            // Try to get message from response.data, then response.data itself, then err.message
+            //errorMsg = err.response?.data?.message || err.response?.data || err.message || errorMsg;
+            errorMsg = "Failed to update assignment."
+        } else if (err instanceof Error) {
+            // If it's a generic JavaScript Error, we know 'err.message' exists
+            // errorMsg = err.message || errorMsg;
+            errorMsg = "Failed to update assignment."
+        }
+      
+            // Rollback the UI state on error
+            setResponsibleByMarket((prevMap) => ({ ...prevMap, [marketId]: oldUserIdString }));
+            console.log(`Rolled back UI state for market ${marketId} to ${oldUserIdString}`);
+            showError(errorMsg);
+            // Optional: Show error toast
+            throw err; // Re-throw error
     }
   };
 
@@ -278,6 +336,7 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const value = useMemo<MarketCtx>(
     () => ({
       markets,
+      loading,
       addMarket,
       getMarket,
       listMembers,
@@ -290,10 +349,10 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       removeMarket,
       editMarket, 
     }),
-    [markets, membersByMarket, responsibleByMarket]
+    [markets, membersByMarket, responsibleByMarket, loading]
   );
 
-  if (loading) {
+  if (loading && markets.length === 0) {
     return <div>Loading markets...</div>;
   }
 

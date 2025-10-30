@@ -21,6 +21,7 @@ type Props = {
   marketId: string;
   onBack: () => void;
   onStartLoan: (memberId: string) => void; 
+  onViewAllHistory: () => void;
 };
 
 type MemberRow = {
@@ -47,7 +48,7 @@ type TxRow = {
 };
 
 /* -------------------- Main Component -------------------- */
-const MarketDetail: React.FC<Props> = ({  marketId, onBack, onStartLoan }) => {
+const MarketDetail: React.FC<Props> = ({  marketId, onBack, onStartLoan, onViewAllHistory }) => {
   const { t } = useTranslation();
   const { showSuccess, showError, showConfirm } = useNotifications();
 
@@ -119,6 +120,7 @@ const MarketDetail: React.FC<Props> = ({  marketId, onBack, onStartLoan }) => {
   const loadMembers = async () => {
     let list: MemberRow[] = [];
 
+    //load members
     try {
       const res = await fetchMarketCustomers(
         marketIdNum,
@@ -391,9 +393,13 @@ const MarketDetail: React.FC<Props> = ({  marketId, onBack, onStartLoan }) => {
         <h3 className="text-lg font-semibold mb-3">{t('recentActivity')}</h3>
         <RecentTransactions transactions={transactions.slice(0, 5)} />
         {transactions.length > 5 && (
-          <button className="mt-3 px-3 py-2 border rounded-lg hover:bg-gray-50">
-            {t('viewAllHistory')}
-          </button>
+          <button 
+  type="button"
+  onClick={onViewAllHistory}          
+  className="px-3 py-2 rounded-lg border hover:bg-gray-50"
+>
+  View all history
+</button>
         )}
       </div>
     </div>

@@ -3,7 +3,7 @@ import { loginUser } from './Service/authService';
 import { User, Lock, LoaderCircle } from 'lucide-react'; // Import icons
 
 interface LoginFormProps {
-  onLoginSuccess: (token: string) => void;
+  onLoginSuccess: (token: string, roleId: number) => void;
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
@@ -21,7 +21,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
       const data = await loginUser(username, password);
       sessionStorage.setItem('authToken', data.token);
       sessionStorage.setItem('userRole', data.user.roleId.toString());
-      onLoginSuccess(data.token);
+      onLoginSuccess(data.token, data.user.roleId);
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);

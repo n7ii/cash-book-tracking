@@ -39,7 +39,6 @@ export async function createCollectionWithStatus(payload: {
 }) {
   // ✅ summary total from all items 
   const items = (payload.items || [])
-    .filter((it) => toNum(it.amount) > 0 || it.unpaid === true);
 
   if (!Array.isArray(items) || items.length === 0) {
     throw new Error('ບໍ່ມີລາຍການສະມາຊິກສຳລັບເກັບເງິນ');
@@ -51,7 +50,7 @@ export async function createCollectionWithStatus(payload: {
   // create details array for backend
   const details = items.map((it) => ({
     member_id: Number(it.member_id),
-    amount: toNum(it.amount),   
+    amount: toNum(it.amount),
     status: it.unpaid ? 'NOT_PAID' : 'PAID',
     notes: it.note || undefined,
   }));
@@ -115,13 +114,11 @@ export async function createExpense(payload: {
   return api.post('/expenses', body);
 }
 
-/* ========= UPLOAD SLIP =========
-   reference uploadRoutes.js name field 'slip'
-*/
+// ========= UPLOAD SLIP =========
 export async function uploadSlip(file: File): Promise<string> {
   const form = new FormData();
-  form.append('slip', file);
-  const res = await api.post('/upload/slip', form, {
+  form.append('image', file); // ✅ backend: upload.single('image')
+  const res = await api.post('/upload', form, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
   return res?.data?.url || '';

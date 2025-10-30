@@ -19,6 +19,14 @@ router.get('/', authMiddleware, async (req, res, next) => {
     let baseQuery;
     let queryValues = [];
 
+    const selectClause = `
+      SELECT mk.*,
+             (SELECT ema.employee_id
+              FROM employee_market_assignments ema
+              WHERE ema.market_id = mk.MkID
+              LIMIT 1) AS responsible_by
+    `;
+
     if (roleId === 1) {
       baseQuery = `FROM tbmarkets AS mk`;
     } else {
@@ -42,7 +50,8 @@ router.get('/', authMiddleware, async (req, res, next) => {
     const total = countRows[0].total;
 
     const dataSql = `
-      SELECT mk.* ${baseQuery}
+      ${selectClause}
+      ${baseQuery}
       ${searchClause}
       ORDER BY mk.Mname ASC
       LIMIT ? OFFSET ?
@@ -54,7 +63,7 @@ router.get('/', authMiddleware, async (req, res, next) => {
     next(error);
   }
 });
-
+ 
 /* =========================
  * CREATE MARKET  POST /api/markets
  * ========================= */
@@ -63,8 +72,6 @@ router.post('/', authMiddleware, async (req, res, next) => {
   try {
     const { userId, roleId } = req.user;
     const { Mname, Address } = req.body;
-    // admin set responsible_by 
-    const responsible_by = roleId === 1 ? (req.body.responsible_by ?? null) : null;
 
     if (!Mname || !Address) {
       return res.status(400).send('Mname and Address are required.');
@@ -72,8 +79,8 @@ router.post('/', authMiddleware, async (req, res, next) => {
 
     // 1) create market
     const [result] = await db.query(
-      `INSERT INTO tbmarkets (Mname, Address, responsible_by) VALUES (?, ?, ?)`,
-      [Mname, Address, responsible_by]
+      `INSERT INTO tbmarkets (Mname, Address) VALUES (?, ?)`,
+      [Mname, Address]
     );
     const marketId = result.insertId;
 
@@ -99,7 +106,7 @@ router.post('/', authMiddleware, async (req, res, next) => {
           'CREATE_MARKET',
           'tbmarkets',
           marketId,
-          JSON.stringify({ Mname, Address, responsible_by }),
+          JSON.stringify({ Mname, Address }),
           req.ip
         ]
       );
@@ -145,10 +152,11 @@ router.get('/:id', authMiddleware, async (req, res, next) => {
  * UPDATE MARKET  PUT /api/markets/:id
  * ========================= */
 router.put('/:id', authMiddleware, async (req, res, next) => {
+  const connection = await db.getConnection();
   try {
     const { userId, roleId } = req.user;
     const marketId = req.params.id;
-    const { Mname, Address, responsible_by, edit_reason } = req.body;
+    const { Mname, Address, edit_reason } = req.body;
 
     if (!edit_reason) return res.status(400).send('An edit reason is required.');
 
@@ -162,8 +170,8 @@ router.put('/:id', authMiddleware, async (req, res, next) => {
 
     let sql, values;
     if (roleId === 1) {
-      sql = `UPDATE tbmarkets SET Mname = ?, Address = ?, responsible_by = ? WHERE MkID = ?`;
-      values = [Mname, Address, responsible_by, marketId];
+      sql = `UPDATE tbmarkets SET Mname = ?, Address = ? WHERE MkID = ?`;
+      values = [Mname, Address, marketId];
     } else {
       sql = `UPDATE tbmarkets SET Mname = ?, Address = ? WHERE MkID = ?`;
       values = [Mname, Address, marketId];

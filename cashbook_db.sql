@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.2
+-- version 5.2.3
 -- https://www.phpmyadmin.net/
 --
 -- Host: db:3306
--- Generation Time: Oct 23, 2025 at 03:02 AM
--- Server version: 8.0.43
--- PHP Version: 8.2.27
+-- Generation Time: Oct 30, 2025 at 07:22 AM
+-- Server version: 8.0.44
+-- PHP Version: 8.3.26
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -191,7 +191,69 @@ INSERT INTO `activity_log` (`AID`, `user_id`, `action_type`, `details`, `target_
 (146, 9, 'ADMIN_DELETE_EXPENSE', '{\"reason\":\"expenseDelTest\",\"deleted_record\":{\"EID\":4,\"user_id\":9,\"expense_type\":\"ເຂົ້າ\",\"amount\":25000,\"photo_url\":null,\"created_at\":\"2025-09-28T20:19:05.000Z\",\"notes\":\"ມາເດີ້ພີ່ນ້ອງກິນເຂົ້າເຊົ້ານຳກັນ\",\"category\":null,\"payment_method\":\"CASH\",\"market_id\":null}}', 4, 'tbexpenses', '::1', '2025-10-22 06:22:08'),
 (147, 9, 'ADMIN_DELETE_INCOME', '{\"reason\":\"IncomeDelTest\",\"deleted_record\":{\"IID\":9,\"member_id\":16,\"user_id\":9,\"total\":125000,\"photo_url\":null,\"notes\":\"Collection from Morning Market.\",\"market_id\":1,\"created_at\":\"2025-09-28T22:19:06.000Z\",\"type\":\"COLLECTION\",\"category\":null,\"payment_method\":\"CASH\"}}', 9, 'tbincome', '::1', '2025-10-22 06:22:18'),
 (148, 9, 'USER_LOGIN_SUCCESS', NULL, 9, 'tbuser', '::1', '2025-10-23 02:32:24'),
-(149, 9, 'CREATE_RECONCILIATION', '{\"statement_date\":\"2025-10-23\",\"balance_difference\":0}', 2, 'tb_reconciliations', '::1', '2025-10-23 02:32:52');
+(149, 9, 'CREATE_RECONCILIATION', '{\"statement_date\":\"2025-10-23\",\"balance_difference\":0}', 2, 'tb_reconciliations', '::1', '2025-10-23 02:32:52'),
+(150, 9, 'USER_LOGIN_SUCCESS', NULL, 9, 'tbuser', '::ffff:127.0.0.1', '2025-10-23 03:20:19'),
+(151, 9, 'USER_LOGIN_SUCCESS', NULL, 9, 'tbuser', '::1', '2025-10-23 07:18:51'),
+(152, 9, 'USER_LOGIN_SUCCESS', NULL, 9, 'tbuser', '::1', '2025-10-23 10:03:10'),
+(153, 9, 'CREATE_RECONCILIATION', '{\"statement_date\":\"2025-10-23\",\"balance_difference\":0}', 3, 'tb_reconciliations', '::1', '2025-10-23 11:01:48'),
+(154, 9, 'USER_LOGIN_SUCCESS', NULL, 9, 'tbuser', '::1', '2025-10-24 07:51:48'),
+(155, 9, 'CREATE_INCOME', '{\"total\":20000,\"detail_count\":2,\"is_loan_payment\":false}', 17, 'tbincome', '::1', '2025-10-24 07:52:29'),
+(156, 9, 'ADMIN_ADD_FUNDS', '{\"total\":1000000,\"type\":\"FUNDING\"}', 18, 'tbincome', '::1', '2025-10-24 07:57:58'),
+(157, 9, 'USER_LOGIN_SUCCESS', NULL, 9, 'tbuser', '::1', '2025-10-27 08:38:04'),
+(158, 9, 'CREATE_LOAN', '{\"member_id\":16,\"total\":100000}', 15, 'tbloans', '::1', '2025-10-27 08:40:08'),
+(159, 9, 'CREATE_INCOME', '{\"total\":10000,\"detail_count\":1,\"is_loan_payment\":false}', 19, 'tbincome', '::1', '2025-10-27 08:40:43'),
+(160, 9, 'CREATE_INCOME', '{\"total\":10000,\"detail_count\":1,\"is_loan_payment\":false}', 20, 'tbincome', '::1', '2025-10-27 08:41:55'),
+(161, 9, 'CREATE_INCOME', '{\"total\":2000,\"detail_count\":2,\"is_loan_payment\":false}', 21, 'tbincome', '::1', '2025-10-27 08:49:25'),
+(162, 9, 'CREATE_CUSTOMER', '{\"customer_name\":\"ເອ ບີ\"}', 21, 'tbmember', '::1', '2025-10-27 09:25:40'),
+(163, 9, 'USER_LOGIN_SUCCESS', NULL, 9, 'tbuser', '::1', '2025-10-28 05:22:11'),
+(164, 9, 'CREATE_INCOME', '{\"total\":10000,\"detail_count\":1,\"is_loan_payment\":false}', 22, 'tbincome', '::1', '2025-10-28 06:42:09'),
+(165, 9, 'CREATE_LOAN', '{\"member_id\":6,\"total\":10000}', 16, 'tbloans', '::1', '2025-10-28 06:45:34'),
+(166, 9, 'CREATE_INCOME', '{\"total\":30000,\"detail_count\":3,\"is_loan_payment\":false}', 23, 'tbincome', '::1', '2025-10-28 06:52:42'),
+(167, 9, 'CREATE_INCOME', '{\"total\":20000,\"detail_count\":2,\"is_loan_payment\":false}', 24, 'tbincome', '::1', '2025-10-28 08:07:09'),
+(168, 9, 'CREATE_INCOME', '{\"total\":20000,\"detail_count\":2,\"is_loan_payment\":false}', 25, 'tbincome', '::1', '2025-10-28 08:25:53'),
+(169, 9, 'USER_LOGIN_SUCCESS', NULL, 9, 'tbuser', '::1', '2025-10-28 09:18:47'),
+(170, 9, 'CREATE_INCOME', '{\"total\":50000,\"detail_count\":1,\"is_loan_payment\":false}', 26, 'tbincome', '::1', '2025-10-28 09:30:40'),
+(171, 9, 'USER_LOGIN_SUCCESS', NULL, 9, 'tbuser', '::1', '2025-10-28 15:09:52'),
+(172, 9, 'CREATE_INCOME', '{\"total\":60000,\"detail_count\":1,\"is_loan_payment\":true}', 27, 'tbincome', '::1', '2025-10-28 15:10:32'),
+(173, 9, 'CREATE_INCOME', '{\"total\":10000,\"detail_count\":1,\"is_loan_payment\":true}', 28, 'tbincome', '::1', '2025-10-28 15:12:12'),
+(174, 9, 'CREATE_INCOME', '{\"total\":20000,\"detail_count\":1,\"is_loan_payment\":true}', 29, 'tbincome', '::1', '2025-10-28 15:12:38'),
+(175, 9, 'CREATE_CUSTOMER', '{\"customer_name\":\"ທ ລ\"}', 22, 'tbmember', '::1', '2025-10-28 15:18:25'),
+(176, 9, 'UPDATE_CUSTOMER', '{\"reason\":\"update member\"}', 22, 'tbmember', '::1', '2025-10-28 16:23:10'),
+(177, 9, 'UPDATE_CUSTOMER', '{\"reason\":\"update member\"}', 22, 'tbmember', '::1', '2025-10-28 16:23:17'),
+(178, 9, 'UPDATE_CUSTOMER', '{\"reason\":\"update member\"}', 22, 'tbmember', '::1', '2025-10-28 16:24:19'),
+(179, 9, 'CREATE_INCOME', '{\"total\":10000,\"detail_count\":1,\"is_loan_payment\":true}', 30, 'tbincome', '::1', '2025-10-28 16:24:50'),
+(180, 9, 'UPDATE_CUSTOMER', '{\"reason\":\"update member\"}', 22, 'tbmember', '::1', '2025-10-28 16:39:46'),
+(181, 9, 'CREATE_LOAN', '{\"member_id\":22,\"total\":100000}', 17, 'tbloans', '::1', '2025-10-28 16:42:36'),
+(182, 9, 'USER_LOGIN_SUCCESS', NULL, 9, 'tbuser', '::1', '2025-10-29 03:23:33'),
+(183, 9, 'CREATE_INCOME', '{\"total\":50000,\"detail_count\":1,\"is_loan_payment\":true}', 31, 'tbincome', '::1', '2025-10-29 03:25:25'),
+(184, 9, 'CREATE_INCOME', '{\"total\":100000,\"detail_count\":1,\"is_loan_payment\":true}', 32, 'tbincome', '::1', '2025-10-29 03:30:38'),
+(185, 9, 'USER_LOGIN_SUCCESS', NULL, 9, 'tbuser', '::1', '2025-10-29 06:21:22'),
+(186, 9, 'UPDATE_MARKET', '{\"reason\":\"change responsible\"}', 2, 'tbmarkets', '::1', '2025-10-29 06:21:33'),
+(187, 9, 'UPDATE_MARKET', '{\"reason\":\"change responsible\"}', 2, 'tbmarkets', '::1', '2025-10-29 06:21:38'),
+(188, 9, 'ADMIN_UPDATE_MARKET_ASSIGNMENT', '{\"market_id\":2,\"new_assigned_employee_id\":12}', 2, 'employee_market_assignments', '::1', '2025-10-29 07:42:02'),
+(189, 9, 'ADMIN_UPDATE_MARKET_ASSIGNMENT', '{\"market_id\":2,\"new_assigned_employee_id\":11}', 2, 'employee_market_assignments', '::1', '2025-10-29 07:42:26'),
+(190, 9, 'UPDATE_CUSTOMER', '{\"reason\":\"update member\"}', 16, 'tbmember', '::1', '2025-10-29 07:54:13'),
+(191, 9, 'CREATE_INCOME', '{\"total\":20000,\"detail_count\":1,\"is_loan_payment\":true}', 33, 'tbincome', '::1', '2025-10-29 08:02:26'),
+(192, 9, 'USER_LOGIN_SUCCESS', NULL, 9, 'tbuser', '::1', '2025-10-29 09:02:27'),
+(193, 9, 'CREATE_LOAN', '{\"member_id\":8,\"total\":500000}', 18, 'tbloans', '::1', '2025-10-29 09:03:18'),
+(194, 9, 'CREATE_INCOME', '{\"total\":150000,\"detail_count\":3,\"is_loan_payment\":true}', 34, 'tbincome', '::1', '2025-10-29 09:03:50'),
+(195, 9, 'USER_LOGIN_SUCCESS', NULL, 9, 'tbuser', '::1', '2025-10-29 09:09:49'),
+(196, 9, 'CREATE_INCOME', '{\"total\":200000,\"detail_count\":3,\"is_loan_payment\":true}', 35, 'tbincome', '::1', '2025-10-29 09:10:13'),
+(197, 9, 'USER_LOGIN_SUCCESS', NULL, 9, 'tbuser', '::1', '2025-10-29 17:48:21'),
+(198, 9, 'CREATE_INCOME', '{\"total\":150000,\"detail_count\":3,\"is_loan_payment\":true}', 36, 'tbincome', '::1', '2025-10-29 17:48:56'),
+(199, 9, 'USER_LOGIN_SUCCESS', NULL, 9, 'tbuser', '::1', '2025-10-29 17:50:45'),
+(200, 9, 'CREATE_INCOME', '{\"total\":30000,\"detail_count\":3,\"is_loan_payment\":true}', 37, 'tbincome', '::1', '2025-10-29 17:51:18'),
+(201, 9, 'USER_LOGIN_SUCCESS', NULL, 9, 'tbuser', '::1', '2025-10-29 17:52:34'),
+(202, 9, 'CREATE_MARKET', '{\"Mname\":\"a\",\"Address\":6}', 10, 'tbmarkets', '::1', '2025-10-29 17:52:44'),
+(203, 9, 'ADMIN_DELETE_MARKET', '{\"reason\":\"remove market\",\"deleted_record\":{\"MkID\":10,\"Mname\":\"a\",\"Address\":6}}', 10, 'tbmarkets', '::1', '2025-10-29 17:52:47'),
+(204, 9, 'USER_LOGIN_SUCCESS', NULL, 9, 'tbuser', '::1', '2025-10-30 04:42:22'),
+(205, 9, 'CREATE_LOAN', '{\"member_id\":21,\"total\":10000000}', 19, 'tbloans', '::1', '2025-10-30 04:43:41'),
+(206, 9, 'CREATE_INCOME', '{\"total\":5000000,\"detail_count\":4,\"is_loan_payment\":true}', 38, 'tbincome', '::1', '2025-10-30 04:44:49'),
+(207, 9, 'CREATE_INCOME', '{\"total\":10000,\"detail_count\":4,\"is_loan_payment\":true}', 39, 'tbincome', '::1', '2025-10-30 04:46:50'),
+(208, 9, 'USER_LOGIN_SUCCESS', NULL, 9, 'tbuser', '::1', '2025-10-30 04:47:06'),
+(209, 9, 'USER_LOGIN_SUCCESS', NULL, 9, 'tbuser', '::1', '2025-10-30 04:57:41'),
+(210, 9, 'CREATE_INCOME', '{\"total\":100000,\"detail_count\":4,\"is_loan_payment\":true}', 40, 'tbincome', '::1', '2025-10-30 04:59:12'),
+(211, 9, 'CREATE_INCOME', '{\"total\":10000,\"detail_count\":4,\"is_loan_payment\":true}', 41, 'tbincome', '::1', '2025-10-30 05:11:53');
 
 -- --------------------------------------------------------
 
@@ -200,7 +262,7 @@ INSERT INTO `activity_log` (`AID`, `user_id`, `action_type`, `details`, `target_
 --
 
 CREATE TABLE `employee_market_assignments` (
-  `employee_id` int NOT NULL,
+  `employee_id` int DEFAULT NULL,
   `market_id` int NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -209,9 +271,8 @@ CREATE TABLE `employee_market_assignments` (
 --
 
 INSERT INTO `employee_market_assignments` (`employee_id`, `market_id`) VALUES
+(11, 2),
 (13, 1),
-(8, 2),
-(13, 2),
 (13, 3),
 (13, 5),
 (13, 6);
@@ -270,7 +331,8 @@ INSERT INTO `tbexpenses` (`EID`, `user_id`, `expense_type`, `amount`, `photo_url
 (12, 9, 'djg', 300000, NULL, '2025-10-03 11:12:29', 'yjhggj', NULL, 'CASH', NULL),
 (13, 10, 'dhd', 300000, NULL, '2025-10-05 11:11:04', 'ghft', 'test', 'CASH', NULL),
 (14, 13, 'test', 1000000, NULL, '2025-08-27 11:34:06', 'test', NULL, 'CASH', NULL),
-(15, 11, 'test', 500000, NULL, '2025-08-19 11:38:51', 'test', 'test', 'CASH', NULL);
+(15, 11, 'test', 500000, NULL, '2025-08-19 11:38:51', 'test', 'test', 'CASH', NULL),
+(16, 9, 'test', 10000, NULL, '2025-10-22 20:05:08', 'test', 'test', 'CASH', NULL);
 
 -- --------------------------------------------------------
 
@@ -301,7 +363,34 @@ INSERT INTO `tbincome` (`IID`, `member_id`, `user_id`, `total`, `photo_url`, `no
 (10, 15, 9, 510000, NULL, 'Collection from Morning Market.', 1, '2025-09-29 05:19:41', 'COLLECTION', NULL, 'CASH'),
 (12, 8, 12, 620000, NULL, 'Say my name. Heinsenberg. You\'re god damn right!!!', 3, '2025-10-01 05:54:11', 'COLLECTION', NULL, 'CASH'),
 (13, 9, 12, 600000, NULL, 'Hello world', 5, '2025-10-02 06:56:25', 'COLLECTION', NULL, 'CASH'),
-(14, 12, 12, 1000000, NULL, 'tesy', NULL, '2025-08-27 11:32:32', 'COLLECTION', 'test\r\n', 'CASH');
+(14, 12, 12, 1000000, NULL, 'tesy', NULL, '2025-08-27 11:32:32', 'COLLECTION', 'test\r\n', 'CASH'),
+(15, 18, 11, 1000000, NULL, 'test', 5, '2025-10-23 12:04:24', 'COLLECTION', 'test', 'CASH'),
+(16, 9, 12, 1000000, NULL, 'testd', 3, '2025-10-23 12:05:03', 'COLLECTION', 'tesetsd', 'CASH'),
+(17, 6, 9, 20000, NULL, NULL, 2, '2025-10-24 07:52:29', 'collection', 'งวด-ดอกเบี้ย', 'cash'),
+(18, NULL, 9, 1000000, NULL, NULL, NULL, '2025-10-24 07:57:58', 'COLLECTION', NULL, 'CASH'),
+(19, 16, 9, 10000, NULL, NULL, 2, '2025-10-27 08:40:43', 'collection', 'งวด-ดอกเบี้ย', 'cash'),
+(20, 16, 9, 10000, NULL, NULL, 2, '2025-10-27 08:41:55', 'collection', 'งวด-ดอกเบี้ย', 'cash'),
+(21, 6, 9, 2000, NULL, 'aye yo', 2, '2025-10-27 08:49:25', 'collection', 'งวด-ดอกเบี้ย', 'cash'),
+(22, 16, 9, 10000, NULL, 'ງວດ ຂອງ ຍອງ', 2, '2025-10-28 06:42:09', 'collection', 'งวด-ดอกเบี้ย', 'cash'),
+(23, 6, 9, 30000, NULL, NULL, 2, '2025-10-28 06:52:42', 'collection', 'งวด-ดอกเบี้ย', 'cash'),
+(24, 12, 9, 20000, NULL, NULL, 5, '2025-10-28 08:07:09', 'collection', 'งวด-ดอกเบี้ย', 'cash'),
+(25, 12, 9, 20000, NULL, NULL, 5, '2025-10-28 08:25:53', 'collection', 'งวด-ดอกเบี้ย', 'cash'),
+(26, 9, 9, 50000, NULL, '', 3, '2025-10-28 09:30:40', 'COLLECTION', 'BATCH', 'CASH'),
+(27, 11, 9, 60000, NULL, 'a', 6, '2025-10-28 15:10:32', 'collection', 'งวด-ดอกเบี้ย', 'cash'),
+(28, 6, 9, 10000, NULL, NULL, 2, '2025-10-28 15:12:12', 'collection', 'งวด-ดอกเบี้ย', 'cash'),
+(29, 11, 9, 20000, NULL, NULL, 6, '2025-10-28 15:12:38', 'collection', 'งวด-ดอกเบี้ย', 'cash'),
+(30, 16, 9, 10000, NULL, NULL, 2, '2025-10-28 16:24:50', 'collection', 'ງວດ-ດອກເບ້ຍ', 'cash'),
+(31, 12, 9, 50000, NULL, NULL, 5, '2025-10-29 03:25:25', 'collection', 'ງວດ-ດອກເບ້ຍ', 'cash'),
+(32, 11, 9, 100000, NULL, NULL, 6, '2025-10-29 03:30:38', 'collection', 'ງວດ-ດອກເບ້ຍ', 'transfer'),
+(33, 7, 9, 20000, NULL, NULL, 1, '2025-10-29 08:02:26', 'collection', 'ງວດ-ດອກເບ້ຍ', 'cash'),
+(34, 9, 9, 150000, NULL, NULL, 3, '2025-10-29 09:03:50', 'collection', 'ງວດ-ດອກເບ້ຍ', 'cash'),
+(35, 9, 9, 200000, NULL, NULL, 3, '2025-10-29 09:10:13', 'collection', 'ງວດ-ດອກເບ້ຍ', 'cash'),
+(36, 8, 9, 150000, NULL, NULL, 3, '2025-10-29 17:48:56', 'collection', 'ງວດ-ດອກເບ້ຍ', 'cash'),
+(37, 9, 9, 30000, NULL, NULL, 3, '2025-10-29 17:51:18', 'collection', 'ງວດ-ດອກເບ້ຍ', 'cash'),
+(38, 16, 9, 5000000, NULL, NULL, 2, '2025-10-30 04:44:49', 'collection', 'ງວດ-ດອກເບ້ຍ', 'cash'),
+(39, 16, 9, 10000, NULL, NULL, 2, '2025-10-30 04:46:50', 'collection', 'ງວດ-ດອກເບ້ຍ', 'cash'),
+(40, 16, 9, 100000, NULL, NULL, 2, '2025-10-30 04:59:12', 'collection', 'ງວດ-ດອກເບ້ຍ', 'cash'),
+(41, 16, 9, 10000, 'http://localhost:3000/uploads/image-1761801102000-93859432.png', NULL, 2, '2025-10-30 05:11:53', 'collection', 'ງວດ-ດອກເບ້ຍ', 'transfer');
 
 -- --------------------------------------------------------
 
@@ -312,6 +401,7 @@ INSERT INTO `tbincome` (`IID`, `member_id`, `user_id`, `total`, `photo_url`, `no
 CREATE TABLE `tbincome_details` (
   `income_id` int NOT NULL,
   `member_id` int NOT NULL,
+  `amount` bigint NOT NULL DEFAULT '0' COMMENT 'Amount collected for this specific member in this batch',
   `status` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'PAID',
   `notes` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -320,16 +410,68 @@ CREATE TABLE `tbincome_details` (
 -- Dumping data for table `tbincome_details`
 --
 
-INSERT INTO `tbincome_details` (`income_id`, `member_id`, `status`, `notes`) VALUES
-(10, 8, 'PAID', 'On time'),
-(10, 9, 'PAID', 'Paid extra'),
-(12, 11, 'NOT_PAID', NULL),
-(12, 12, 'NOT_PAID', 'ມາເດີ້ກິນເຂົ້າ'),
-(12, 16, 'PAID', 'ມາເດີ້ກິນເຂົ້າ'),
-(13, 6, 'NOT_PAID', NULL),
-(13, 8, 'NOT_PAID', NULL),
-(13, 12, 'PAID', NULL),
-(13, 16, 'NOT_PAID', NULL);
+INSERT INTO `tbincome_details` (`income_id`, `member_id`, `amount`, `status`, `notes`) VALUES
+(10, 8, 0, 'PAID', 'On time'),
+(10, 9, 0, 'PAID', 'Paid extra'),
+(10, 16, 0, 'PAID', 'test'),
+(12, 11, 0, 'NOT_PAID', NULL),
+(12, 12, 0, 'NOT_PAID', 'ມາເດີ້ກິນເຂົ້າ'),
+(12, 16, 0, 'PAID', 'ມາເດີ້ກິນເຂົ້າ'),
+(13, 6, 0, 'NOT_PAID', NULL),
+(13, 8, 0, 'NOT_PAID', NULL),
+(13, 12, 0, 'PAID', NULL),
+(13, 16, 0, 'NOT_PAID', NULL),
+(16, 18, 0, 'PAID', 'test'),
+(17, 6, 0, 'PAID', NULL),
+(17, 16, 0, 'PAID', NULL),
+(19, 16, 0, 'PAID', NULL),
+(20, 16, 0, 'PAID', NULL),
+(21, 6, 0, 'PAID', NULL),
+(21, 16, 0, 'PAID', NULL),
+(22, 16, 0, 'PAID', NULL),
+(23, 6, 0, 'PAID', NULL),
+(23, 16, 0, 'PAID', NULL),
+(23, 21, 0, 'PAID', NULL),
+(24, 12, 10000, 'PAID', NULL),
+(24, 13, 10000, 'PAID', NULL),
+(25, 12, 10000, 'PAID', NULL),
+(25, 13, 10000, 'PAID', NULL),
+(26, 9, 50000, 'PAID', ''),
+(27, 11, 60000, 'PAID', NULL),
+(28, 6, 10000, 'PAID', NULL),
+(29, 11, 20000, 'PAID', NULL),
+(30, 16, 10000, 'PAID', NULL),
+(31, 12, 50000, 'PAID', NULL),
+(32, 11, 100000, 'PAID', NULL),
+(33, 7, 20000, 'PAID', NULL),
+(34, 8, 0, 'NOT_PAID', 'a'),
+(34, 9, 0, 'PAID', NULL),
+(34, 15, 0, 'PAID', NULL),
+(35, 8, 0, 'PAID', NULL),
+(35, 9, 0, 'PAID', NULL),
+(35, 15, 0, 'PAID', NULL),
+(36, 8, 50000, 'PAID', NULL),
+(36, 9, 50000, 'PAID', NULL),
+(36, 15, 50000, 'PAID', NULL),
+(37, 8, 10000, 'PAID', NULL),
+(37, 9, 10000, 'PAID', NULL),
+(37, 15, 10000, 'PAID', NULL),
+(38, 6, 0, 'NOT_PAID', 'a'),
+(38, 16, 0, 'NOT_PAID', 'a'),
+(38, 21, 5000000, 'PAID', NULL),
+(38, 22, 0, 'NOT_PAID', 'a'),
+(39, 6, 0, 'NOT_PAID', 'a'),
+(39, 16, 0, 'NOT_PAID', 'aaa'),
+(39, 21, 10000, 'PAID', NULL),
+(39, 22, 0, 'NOT_PAID', 'a'),
+(40, 6, 0, 'NOT_PAID', 'a'),
+(40, 16, 0, 'NOT_PAID', 'aa'),
+(40, 21, 100000, 'PAID', NULL),
+(40, 22, 0, 'NOT_PAID', 'a'),
+(41, 6, 0, 'NOT_PAID', 'ັ'),
+(41, 16, 0, 'NOT_PAID', 'ັັ'),
+(41, 21, 10000, 'PAID', NULL),
+(41, 22, 0, 'NOT_PAID', 'ັ');
 
 -- --------------------------------------------------------
 
@@ -354,12 +496,18 @@ CREATE TABLE `tbloans` (
 --
 
 INSERT INTO `tbloans` (`LID`, `member_id`, `total`, `paid_total`, `start_date`, `end_date`, `status`, `notes`, `created_by`) VALUES
-(5, 15, 300000, 0, '2025-09-29 04:41:19', '2025-09-30', 1, NULL, 11),
-(6, 9, 350000, 0, '2025-09-29 04:41:19', '2025-10-15', 1, NULL, 11),
-(8, 12, 540000, 0, '2025-09-29 04:42:25', '2025-10-25', 1, NULL, 10),
-(9, 11, 460000, 0, '2025-09-29 04:43:34', '2025-10-29', 1, NULL, 13),
-(10, 7, 420000, 0, '2025-09-29 04:43:34', '2025-10-13', 1, NULL, 11),
-(11, 13, 300000, 0, '2025-10-02 07:12:43', '2025-10-23', 1, NULL, 11);
+(5, 15, 300000, 60000, '2025-09-29 04:41:19', '2025-09-30', 1, NULL, 11),
+(6, 9, 350000, 60000, '2025-09-29 04:41:19', '2025-10-15', 1, NULL, 11),
+(8, 12, 540000, 50000, '2025-09-29 04:42:25', '2025-10-25', 1, NULL, 10),
+(9, 11, 460000, 180000, '2025-09-29 04:43:34', '2025-10-29', 1, NULL, 13),
+(10, 7, 420000, 20000, '2025-09-29 04:43:34', '2025-10-13', 1, NULL, 11),
+(11, 13, 300000, 0, '2025-10-02 07:12:43', '2025-10-23', 1, NULL, 11),
+(14, 9, 33000, 20000, '2025-10-23 12:03:33', '2025-10-29', 0, NULL, 10),
+(15, 16, 100000, 10000, '2025-10-27 08:40:08', NULL, 1, NULL, 9),
+(16, 6, 10000, 10000, '2025-10-28 06:45:34', NULL, 1, NULL, 9),
+(17, 22, 100000, 0, '2025-10-28 16:42:36', NULL, 1, NULL, 9),
+(18, 8, 500000, 60000, '2025-10-29 09:03:18', NULL, 1, NULL, 9),
+(19, 21, 10000000, 5120000, '2025-10-30 04:43:41', NULL, 1, NULL, 9);
 
 -- --------------------------------------------------------
 
@@ -370,20 +518,19 @@ INSERT INTO `tbloans` (`LID`, `member_id`, `total`, `paid_total`, `start_date`, 
 CREATE TABLE `tbmarkets` (
   `MkID` int NOT NULL,
   `Mname` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `Address` int NOT NULL,
-  `responsible_by` int DEFAULT NULL
+  `Address` int NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `tbmarkets`
 --
 
-INSERT INTO `tbmarkets` (`MkID`, `Mname`, `Address`, `responsible_by`) VALUES
-(1, 'ຕະຫຼາດເຊົ້າ', 3, 13),
-(2, 'Thongkhankham Morning Market', 3, NULL),
-(3, 'ຕະຫຼາດລາວ', 2, 13),
-(5, 'ຕະຫຼາດຊຽງຄວນ', 3, 11),
-(6, 'ຕະຫຼາດໜອງໜ່ຽງ', 5, 12);
+INSERT INTO `tbmarkets` (`MkID`, `Mname`, `Address`) VALUES
+(1, 'ຕະຫຼາດເຊົ້າ', 3),
+(2, 'Thongkhankham Morning Market', 3),
+(3, 'ຕະຫຼາດລາວ', 2),
+(5, 'ຕະຫຼາດຊຽງຄວນ', 3),
+(6, 'ຕະຫຼາດໜອງໜ່ຽງ', 5);
 
 -- --------------------------------------------------------
 
@@ -417,7 +564,9 @@ INSERT INTO `tbmember` (`MID`, `Fname`, `Lname`, `birth_date`, `market_id`, `rol
 (15, 'ສາ', 'ລາໄຊ', NULL, 3, 3, 1, '2025-09-29 02:56:41'),
 (16, 'ຍອງ', 'ສະລາ', '1999-12-31', 2, 3, 1, '2025-09-29 02:57:02'),
 (18, 'ກອນ', 'ລາວັນ', NULL, 5, 3, 1, '2025-10-15 03:00:54'),
-(19, 'ບາ', 'ລີ', NULL, 5, 2, 1, '2025-10-15 03:37:21');
+(19, 'ບາ', 'ລີ', NULL, 5, 2, 1, '2025-10-15 03:37:21'),
+(21, 'ເອ', 'ບີ', NULL, 2, 2, 1, '2025-10-27 09:25:40'),
+(22, 'ທ', 'ລ', '2005-01-01', 2, 2, 1, '2025-10-28 15:18:25');
 
 -- --------------------------------------------------------
 
@@ -537,7 +686,8 @@ CREATE TABLE `tb_reconciliations` (
 
 INSERT INTO `tb_reconciliations` (`id`, `reconciled_by_user_id`, `statement_date`, `system_balance`, `bank_balance`, `reconciled_at`) VALUES
 (1, 9, '2025-10-11', 4443000.00, 4443000.00, '2025-10-11 08:14:19'),
-(2, 9, '2025-10-23', 4630000.00, 4630000.00, '2025-10-23 02:32:52');
+(2, 9, '2025-10-23', 4630000.00, 4630000.00, '2025-10-23 02:32:52'),
+(3, 9, '2025-10-23', 4620000.00, 4620000.00, '2025-10-23 11:01:48');
 
 --
 -- Indexes for dumped tables
@@ -554,8 +704,9 @@ ALTER TABLE `activity_log`
 -- Indexes for table `employee_market_assignments`
 --
 ALTER TABLE `employee_market_assignments`
-  ADD PRIMARY KEY (`employee_id`,`market_id`),
-  ADD KEY `market_id` (`market_id`);
+  ADD UNIQUE KEY `unique_market` (`market_id`),
+  ADD KEY `market_id` (`market_id`),
+  ADD KEY `fk_ema_employee` (`employee_id`);
 
 --
 -- Indexes for table `tbdistricts`
@@ -601,8 +752,7 @@ ALTER TABLE `tbloans`
 --
 ALTER TABLE `tbmarkets`
   ADD PRIMARY KEY (`MkID`),
-  ADD KEY `village_id` (`Address`),
-  ADD KEY `user_response` (`responsible_by`);
+  ADD KEY `village_id` (`Address`);
 
 --
 -- Indexes for table `tbmember`
@@ -655,7 +805,7 @@ ALTER TABLE `tb_reconciliations`
 -- AUTO_INCREMENT for table `activity_log`
 --
 ALTER TABLE `activity_log`
-  MODIFY `AID` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=150;
+  MODIFY `AID` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=212;
 
 --
 -- AUTO_INCREMENT for table `tbdistricts`
@@ -667,31 +817,31 @@ ALTER TABLE `tbdistricts`
 -- AUTO_INCREMENT for table `tbexpenses`
 --
 ALTER TABLE `tbexpenses`
-  MODIFY `EID` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `EID` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT for table `tbincome`
 --
 ALTER TABLE `tbincome`
-  MODIFY `IID` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `IID` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=42;
 
 --
 -- AUTO_INCREMENT for table `tbloans`
 --
 ALTER TABLE `tbloans`
-  MODIFY `LID` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `LID` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT for table `tbmarkets`
 --
 ALTER TABLE `tbmarkets`
-  MODIFY `MkID` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `MkID` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `tbmember`
 --
 ALTER TABLE `tbmember`
-  MODIFY `MID` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `MID` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `tbprovinces`
@@ -721,7 +871,7 @@ ALTER TABLE `tbvillages`
 -- AUTO_INCREMENT for table `tb_reconciliations`
 --
 ALTER TABLE `tb_reconciliations`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- Constraints for dumped tables
@@ -737,8 +887,8 @@ ALTER TABLE `activity_log`
 -- Constraints for table `employee_market_assignments`
 --
 ALTER TABLE `employee_market_assignments`
-  ADD CONSTRAINT `employee_market_assignments_ibfk_1` FOREIGN KEY (`employee_id`) REFERENCES `tbuser` (`UID`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `employee_market_assignments_ibfk_2` FOREIGN KEY (`market_id`) REFERENCES `tbmarkets` (`MkID`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `fk_ema_employee` FOREIGN KEY (`employee_id`) REFERENCES `tbuser` (`UID`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_ema_market` FOREIGN KEY (`market_id`) REFERENCES `tbmarkets` (`MkID`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `tbdistricts`
@@ -779,7 +929,6 @@ ALTER TABLE `tbloans`
 -- Constraints for table `tbmarkets`
 --
 ALTER TABLE `tbmarkets`
-  ADD CONSTRAINT `user_response` FOREIGN KEY (`responsible_by`) REFERENCES `tbuser` (`UID`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `village_id` FOREIGN KEY (`Address`) REFERENCES `tbvillages` (`VID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --

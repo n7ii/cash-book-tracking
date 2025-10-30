@@ -9,6 +9,7 @@ import {
   createLoanTx,
   uploadSlip,
 } from './Service/transactionformService';
+import { useTransactions } from '../contexts/TransactionContext';
 
 type TxType = 'income' | 'expense';
 type Category = 'ທຶນ' | 'ງວດ-ດອກເບ້ຍ' | 'ອື່ນໆ';
@@ -25,6 +26,7 @@ type Props = {
   defaultCategory?: Category | null; 
   defaultMarketId?: string | null;
   defaultMemberId?: string | null;
+  defaultMethod?: 'cash' | 'transfer' | 'other' | null; 
   onAfterSubmit?: () => void;
 };
 
@@ -33,10 +35,12 @@ const TransactionForm: React.FC<Props> = ({
   defaultCategory,
   defaultMarketId,
   defaultMemberId,
+  defaultMethod,
   onAfterSubmit,
 }) => {
   const { markets } = useMarkets();
   const { showError, showSuccess } = useNotifications();
+  const { refreshTransactions } = useTransactions();
 
   const [type, setType] = useState<TxType>('income');
   const incomeCats: Category[] = ['ທຶນ', 'ງວດ-ດອກເບ້ຍ', 'ອື່ນໆ'];
@@ -114,8 +118,10 @@ const TransactionForm: React.FC<Props> = ({
   if (defaultMemberId) {
     setSelectedMemberId(defaultMemberId);
   }
+  // 4) method  set transfer
+    if (defaultMethod) setMethod(defaultMethod);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [defaultType, defaultCategory, defaultMarketId, defaultMemberId]);
+}, [defaultType, defaultCategory, defaultMarketId, defaultMemberId, defaultMethod]);
 
   const validate = (): string | null => {
     if (type === 'income') {
@@ -167,14 +173,26 @@ const TransactionForm: React.FC<Props> = ({
     try {
       if (type === 'income') {
         if (category === 'ງວດ-ດອກເບ້ຍ') {
-          const items = Object.keys(rowAmounts)
-            .filter((id) => rowAmounts[id] > 0 || rowUnpaid[id])
-            .map((id) => ({
-              member_id: Number(id),
-              amount: rowAmounts[id] || 0,
-              unpaid: !!rowUnpaid[id],
-              note: rowNotes[id] || undefined,
-            }));
+          const items = members // <-- PROBLEM 1 FIX: Iterate over the full `members` list from state
+            .map((member) => { // For each member in the market...
+              const id = member.id; // Get their ID
+              return {
+                member_id: Number(id),
+                // Get amount, unpaid status, and note from state using the member's ID
+                amount: rowAmounts[id] || 0,
+                unpaid: !!rowUnpaid[id],
+                note: rowNotes[id] || undefined,
+              };
+             });
+            // --- END CORRECTED 'items' CREATION ---
+
+            // --- VALIDATION (Optional but Recommended) ---
+            // You might want to add a check here to ensure at least one item was processed
+            if (items.length === 0 && members.length > 0) {
+               console.error("No items generated from members list, check logic.");
+               // Maybe throw an error or show a specific notification
+               return showError("Could not process member details for submission.");
+            }
 
           await createCollectionWithStatus({
             market_id: Number(marketId),
@@ -214,6 +232,7 @@ const TransactionForm: React.FC<Props> = ({
 
       showSuccess('ເຮັດທຸລະກຳສຳເລັດ');
       // reset ສະເພາະຈຳນວນຕາຕະລາງ
+      refreshTransactions();
       setManualAmount('');
       setRowAmounts({});
       setRowUnpaid({});
@@ -442,22 +461,36 @@ const TransactionForm: React.FC<Props> = ({
         <div>
           <label className="text-sm text-gray-600">ອັບໂຫລດສລິບເມື່ອເລືອກໂອນ (ຖ້າໂອນ)</label>
           <div className="flex items-center gap-3 mt-1">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handlePickSlip(e.target.files?.[0] ?? null)}
-              disabled={slipUploading}
-            />
-            {slipUploading && <span className="text-sm text-gray-500">Uploading…</span>}
-            {!!slipUrl && (
-              <a className="text-sm text-blue-600 underline" href={slipUrl} target="_blank" rel="noreferrer">
-                ເບິ່ງຮູບ
-              </a>
-            )}
-          </div>
-          <p className="text-xs text-gray-500 mt-1">ເພື່ອເກັບຫຼັກຖານການໂອນເງິນ</p>
-        </div>
+            <label
+        className={`inline-flex items-center px-3 py-2 rounded-lg
+                    bg-blue-600 text-white hover:bg-blue-700 cursor-pointer
+                    disabled:opacity-50 ${slipUploading ? 'opacity-60 cursor-not-allowed' : ''}`}
+      >
+        {slipUploading ? 'ກຳລັງອັບໂຫລດ…' : (slipUrl ? 'ອັບໂຫລດໃໝ່' : 'ເລືອກຮູບສະລິບ')}
+        <input
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => handlePickSlip(e.target.files?.[0] ?? null)}
+          disabled={slipUploading}
+        />
+      </label>
+
+      {!!slipUrl && (
+        <a
+          className="text-sm text-blue-600 underline"
+          href={slipUrl}
+          target="_blank"
+          rel="noreferrer"
+        >
+          ເບິ່ງຮູບ
+        </a>
       )}
+    </div>
+
+    <p className="text-xs text-gray-500 mt-1">ເພື່ອເກັບຫຼັກຖານການໂອນເງິນ</p>
+  </div>
+)}
 
       <div className="flex justify-end">
         <button

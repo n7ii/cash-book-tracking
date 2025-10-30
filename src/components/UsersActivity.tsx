@@ -80,7 +80,7 @@ const UserActivity: React.FC<Props> = ({ onOpenDetail, onOpenLoanDetail }) => {
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
         <table className="w-full text-left">
-          <thead className="border-b"><tr className="text-gray-700"><th className="px-3 py-2">ID</th><th className="px-3 py-2">Employee</th><th className="px-3 py-2">Market</th><th className="px-3 py-2">Collector/Customer</th><th className="px-3 py-2">Description</th><th className="px-3 py-2">Income</th><th className="px-3 py-2">Expense</th><th className="px-3 py-2">Date</th><th className="px-3 py-2">Action</th></tr></thead>
+          <thead className="border-b"><tr className="text-gray-700"><th className="px-3 py-2">ID</th><th className="px-3 py-2">Employee</th><th className="px-3 py-2">Market</th><th className="px-3 py-2">Agent</th><th className="px-3 py-2">Description</th><th className="px-3 py-2">Income</th><th className="px-3 py-2">Expense</th><th className="px-3 py-2">Date</th><th className="px-3 py-2">Action</th></tr></thead>
           <tbody>
             {isLoading && (<tr><td colSpan={9} className="p-6 text-center"><Loader2 className="h-6 w-6 animate-spin inline-block" /></td></tr>)}
             {!isLoading && transactions.map((t) => (

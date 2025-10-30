@@ -316,8 +316,8 @@ const Dashboard: React.FC<Props> = ({ onQuickAdd, onViewAll }) => {
           <h2 className="text-xl font-semibold mb-4">{t('quickActions') || 'Quick Actions'}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <button
-              onClick={() => onQuickAdd('income')}
-              className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors duration-200"
+              onClick={() => onQuickAdd && onQuickAdd('income')}
+  className="bg-white rounded-xl shadow-sm border p-4 hover:bg-gray-50 transition-colors duration-200"
             >
               <div className="text-center">
                 <ArrowUpRight className="h-8 w-8 text-green-500 mx-auto mb-2" />
@@ -327,8 +327,8 @@ const Dashboard: React.FC<Props> = ({ onQuickAdd, onViewAll }) => {
               </div>
             </button>
             <button
-              onClick={() => onQuickAdd('expense')}
-              className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors duration-200"
+              onClick={() => onQuickAdd && onQuickAdd('expense')}
+  className="bg-white rounded-xl shadow-sm border p-4 hover:bg-gray-50 transition-colors duration-200"
             >
               <div className="text-center">
                 <ArrowDownRight className="h-8 w-8 text-red-500 mx-auto mb-2" />
@@ -338,8 +338,8 @@ const Dashboard: React.FC<Props> = ({ onQuickAdd, onViewAll }) => {
               </div>
             </button>
             <button
-              onClick={() => onQuickAdd('transfer')}
-              className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors duration-200"
+              onClick={() => onQuickAdd && onQuickAdd('transfer')}   // ← ให้ส่ง 'transfer'
+  className="bg-white rounded-xl shadow-sm border p-4 hover:bg-gray-50 transition-colors duration-200"
             >
               <div className="text-center">
                 <CreditCard className="h-8 w-8 text-blue-500 mx-auto mb-2" />

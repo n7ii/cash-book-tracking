@@ -788,6 +788,73 @@ router.post('/customers/:id/delete', authMiddleware, adminMiddleware, async (req
   }
 });
 
+
+
+router.put('/assignments/market/:market_id', authMiddleware, adminMiddleware, async (req, res, next) => {
+  try {
+    const marketId = parseInt(req.params.market_id, 10);
+    // Get the new employee ID from the request body (can be null to unassign)
+    const newEmployeeId = req.body.employee_id !== undefined ? (req.body.employee_id ? parseInt(req.body.employee_id, 10) : null) : undefined;
+    const adminUserId = req.user.userId;
+
+    // --- Basic Validation ---
+    if (isNaN(marketId)) {
+      return res.status(400).send('Invalid Market ID.');
+    }
+    if (newEmployeeId === undefined) {
+      return res.status(400).send('Request body must contain "employee_id" (can be null).');
+    }
+    if (newEmployeeId !== null && isNaN(newEmployeeId)) {
+       return res.status(400).send('Invalid Employee ID provided.');
+    }
+
+    // --- Optional: Check if market exists ---
+    const [marketCheck] = await db.query('SELECT MkID FROM tbmarkets WHERE MkID = ?', [marketId]);
+    if (marketCheck.length === 0) {
+      return res.status(404).send('Market not found.');
+    }
+
+    // --- Optional: Check if employee exists and is valid if assigning ---
+    if (newEmployeeId !== null) {
+        const [userCheck] = await db.query('SELECT role_id FROM tbuser WHERE UID = ? AND is_active = 1', [newEmployeeId]);
+        if (!(userCheck.length > 0 && (userCheck[0].role_id === 4 || userCheck[0].role_id === 1))) {
+            console.warn(`Attempted assignment for Market ${marketId} to invalid/inactive User ${newEmployeeId}.`);
+            return res.status(400).send('Invalid or inactive user selected for assignment.');
+        }
+    }
+
+    // --- Perform UPSERT (Insert or Update) ---
+    // This command tries to INSERT. If a row with the same market_id already exists
+    // (due to the UNIQUE key), it triggers the ON DUPLICATE KEY UPDATE part instead.
+    const upsertSql = `
+      INSERT INTO employee_market_assignments (market_id, employee_id)
+      VALUES (?, ?)
+      ON DUPLICATE KEY UPDATE employee_id = VALUES(employee_id);
+    `;
+    // VALUES(employee_id) refers to the employee_id provided in the VALUES clause (i.e., newEmployeeId)
+    const [result] = await db.query(upsertSql, [marketId, newEmployeeId]);
+
+    console.log(`Upsert result for Market ${marketId}:`, result); // Debug log
+
+    // --- Logging ---
+    try {
+      const logDetails = JSON.stringify({ market_id: marketId, new_assigned_employee_id: newEmployeeId });
+      await db.query(
+        `INSERT INTO activity_log (user_id, action_type, target_table, target_id, details, ip_address) VALUES (?, ?, ?, ?, ?, ?)`,
+        [adminUserId, 'ADMIN_UPDATE_MARKET_ASSIGNMENT', 'employee_market_assignments', marketId, logDetails, req.ip]
+      );
+    } catch (logError) {
+      console.error('Failed to log market assignment update:', logError);
+    }
+
+    res.status(200).send(`Market ${marketId} assignment updated.`);
+
+  } catch (err) {
+    console.error("Error updating market assignment:", err);
+    next(err); // Pass error to global handler
+  }
+});
+
   
 
 module.exports = router;
